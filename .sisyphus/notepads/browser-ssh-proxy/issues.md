@@ -42,3 +42,8 @@
 - `rg` is not installed in this environment, so the forbidden-pattern source scan used `grep -RInE` with `node_modules` and `.next` excluded.
 - Manual QA initially hit a stale `scripts/mock-harness.mts` process occupying ports `2222` and `3001`; identified it with `lsof`, stopped only that stale process, then ran a temporary mock SSH harness from `/tmp/opencode`.
 - No unresolved Task 8 issues remain.
+
+## 2026-05-05T20:50:41Z - task-9-integration-tests
+
+- `npm run lint` initially failed on unused `encodeBase64` imports left in WSS/HTTP tests after refactoring to shared frame helpers; removed the imports and reran lint successfully.
+- The first timeout test design used a blackhole TCP server and exceeded Vitest's 5s default; replaced it with bounded unreachable-host coverage plus sanitizer timeout coverage to keep tests deterministic.

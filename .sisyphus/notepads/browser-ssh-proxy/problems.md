@@ -22,3 +22,7 @@
 ## 2026-05-06T04:36:00Z - task-8-frontend-transport
 
 - No unresolved Task 8 blockers remain. App auth, credential persistence beyond the existing optional localStorage checkbox, SSH key auth, SFTP, port forwarding, terminal recording, and reconnect/resume beyond existing SSE reconnect behavior remain out of scope.
+
+## 2026-05-05T20:50:41Z - task-9-integration-tests
+
+- No unresolved Task 9 blockers remain. Browser-driven SSH terminal E2E coverage, Docker production files, CI/Docker smoke validation, app auth, SSH key auth, SFTP, port forwarding, and terminal recording remain out of scope for later tasks.

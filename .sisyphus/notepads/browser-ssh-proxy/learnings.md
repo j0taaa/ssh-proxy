@@ -67,3 +67,9 @@
 - Browser HTTP fallback from `http://127.0.0.1:3000` to `http://localhost:3001` requires CORS on the fallback routes because JSON POSTs trigger preflight; the minimal gateway support is `OPTIONS`, reflected `Access-Control-Allow-Origin` for localhost dev origins, and SSE/JSON response headers.
 - Forced HTTP fallback opens `POST /sessions`, `GET /sse/terminal/:sessionId/events`, and per-keystroke `POST /sse/terminal/:sessionId/input` requests, while the checkbox path avoids creating a WebSocket entirely.
 - WSS and HTTP fallback manual QA should type a live command after connection because HTTP SSE does not replay shell output emitted before the EventSource subscribes.
+
+## 2026-05-05T20:50:41Z - task-9-integration-tests
+
+- Gateway integration tests now share `apps/gateway/src/test-utils/mock-ssh-server.ts`, a deterministic `ssh2.Server` harness with `testuser`/`testpass`, predictable prompt, command echo, resize recording, input recording, burst output, and channel-close tracking.
+- Fast unreachable/timeout coverage is deterministic by using an ephemeral closed localhost port for real connection failure and direct sanitizer coverage for timeout messages; no external SSH host is required.
+- Large output burst assertions should check accumulated content rather than transport chunking details; the mock emits multiple chunks below the decoded frame limit.

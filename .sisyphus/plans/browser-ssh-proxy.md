@@ -489,7 +489,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `feat(web): connect terminal transports` | Files: `apps/web/**`, `packages/protocol/**`
 
-- [ ] 9. Add Mock SSH Server and Integration Test Coverage
+- [x] 9. Add Mock SSH Server and Integration Test Coverage
 
   **What to do**: Add a deterministic test harness with a mock SSH server that accepts `testuser`/`testpass`, rejects other credentials, emits a predictable prompt, echoes commands, supports PTY shell, and records resize/input events. Cover gateway core, WSS, SSE+POST, validation errors, unreachable host, timeout, tab/network-style disconnect, large output bursts, Unicode, multiline paste, and cleanup.
   **Must NOT do**: Do not require real external SSH hosts or network access outside localhost tests.
