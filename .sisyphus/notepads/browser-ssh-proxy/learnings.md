@@ -35,3 +35,9 @@
 - Gateway WebSocket upgrades are now attached directly to the existing Node `http.Server` with `ws` `WebSocketServer({ noServer: true })`; unknown upgrade paths receive a clear 404 response before socket destroy.
 - The WSS transport keeps protocol heartbeat frames and WebSocket control pings together: active clients answer control pings automatically through `ws`, and protocol `ping` frames are emitted on the same interval for frontend-visible liveness.
 - WSS tests can run quickly by injecting `webSocketOptions.heartbeatIntervalMs` into `createGatewayServer` while production defaults still use the protocol `HEARTBEAT_INTERVAL_MS` value.
+
+## 2026-05-05T18:03:00Z - task-5-sse-post-fallback
+
+- HTTP fallback now routes through the existing Node `http.Server` request handler with a dedicated transport module; no frontend code or alternate transport stack was added.
+- `POST /sessions` returns only `{ "sessionId": "..." }` after `SessionManager.createSession()` completes shell readiness, while `GET /sse/terminal/:sessionId/events` attaches only to live in-memory session output and does not replay output emitted before SSE subscription.
+- SSE disconnect cleanup removes listeners and heartbeat intervals without closing SSH, so reconnecting to the same active session attaches a fresh stream until idle timeout or explicit close.

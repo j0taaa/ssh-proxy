@@ -329,7 +329,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `feat(gateway): add websocket terminal transport` | Files: `apps/gateway/**`, `packages/protocol/**`
 
-- [ ] 5. Implement SSE + POST HTTP Fallback Transport
+- [x] 5. Implement SSE + POST HTTP Fallback Transport
 
   **What to do**: Add HTTP fallback endpoints: `POST /sessions` creates SSH session and returns `sessionId` after shell readiness; `GET /sse/terminal/:sessionId/events` streams `output`, `error`, `close`, and heartbeat events; `POST /sse/terminal/:sessionId/input` accepts `input`, `resize`, and `close` frames. Enforce `8KiB` POST body limit and `4096` decoded data frame limit. SSE disconnect should not immediately kill SSH; cleanup after idle timeout or explicit close.
   **Must NOT do**: Do not add long-polling, WebTransport, WebRTC, Socket.IO, database-backed sessions, or reconnect/resume beyond SSE reconnect to the same in-memory session.

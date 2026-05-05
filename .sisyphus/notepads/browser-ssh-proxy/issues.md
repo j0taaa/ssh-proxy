@@ -26,3 +26,8 @@
 
 - `ws` delivers text frames as raw Buffer data with `isBinary === false`, so WSS validation must reject binary by the flag and then decode non-binary `RawData` to UTF-8 text before JSON parsing.
 - Server shutdown can hang if active WebSocket clients remain open while `server.close()` waits for connections; WSS tests close clients before closing the gateway server.
+
+## 2026-05-05T18:03:00Z - task-5-sse-post-fallback
+
+- SSE clients that attach after `POST /sessions` cannot observe shell banner output already emitted during SSH shell startup; fallback tests should assert live output produced after the SSE stream is open.
+- `npx tsx --eval` in this environment emits CommonJS output for eval snippets, so manual smoke scripts need an async IIFE rather than top-level await.
