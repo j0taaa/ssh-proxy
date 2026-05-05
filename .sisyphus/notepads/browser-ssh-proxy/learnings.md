@@ -73,3 +73,11 @@
 - Gateway integration tests now share `apps/gateway/src/test-utils/mock-ssh-server.ts`, a deterministic `ssh2.Server` harness with `testuser`/`testpass`, predictable prompt, command echo, resize recording, input recording, burst output, and channel-close tracking.
 - Fast unreachable/timeout coverage is deterministic by using an ephemeral closed localhost port for real connection failure and direct sanitizer coverage for timeout messages; no external SSH host is required.
 - Large output burst assertions should check accumulated content rather than transport chunking details; the mock emits multiple chunks below the decoded frame limit.
+
+## 2026-05-06T05:07:00Z - task-10-e2e-playwright
+
+- Playwright E2E global setup starts mock SSH server + gateway on ephemeral ports, then spawns the Next.js dev server with `NEXT_PUBLIC_GATEWAY_URL` env var pointing to the ephemeral gateway; returning a teardown function keeps the global setup process alive.
+- The global setup writes server state (sshPort, gatewayUrl, webUrl) to `.test-state/e2e-env.json` which tests read via `loadE2eState()`.
+- Playwright's `fullyParallel: false` is required because tests share the single mock SSH server instance started in global setup.
+- The WSS failure fallback test replaces `window.WebSocket` with a `FailingWebSocket` class in the browser context; the class immediately triggers `onerror`/`onclose` so the transport client falls back to HTTP.
+- Evidence screenshots show connected status with transport type labels ("via WSS" and "HTTP fallback"); xterm canvas rendering means terminal text may not be readable in PNG screenshots but connection state indicators are clearly visible.

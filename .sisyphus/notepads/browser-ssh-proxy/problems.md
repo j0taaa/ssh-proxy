@@ -26,3 +26,7 @@
 ## 2026-05-05T20:50:41Z - task-9-integration-tests
 
 - No unresolved Task 9 blockers remain. Browser-driven SSH terminal E2E coverage, Docker production files, CI/Docker smoke validation, app auth, SSH key auth, SFTP, port forwarding, and terminal recording remain out of scope for later tasks.
+
+## 2026-05-06T05:07:00Z - task-10-e2e-playwright
+
+- No unresolved Task 10 blockers remain. App auth, credential persistence, SSH key auth, SFTP, port forwarding, terminal recording, Docker production files, README updates, and CI/Docker smoke validation remain out of scope.
