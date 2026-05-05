@@ -17,3 +17,8 @@
 ## 2026-05-05T17:12:02Z - task-1-next-env-clean-clone-correction
 
 - Next 16 rewrites `apps/web/next-env.d.ts` during dev/E2E to import `.next/dev/types/routes.d.ts`; `npm run test:e2e` now runs `scripts/sanitize-next-env.mjs` afterward so the committed scaffold stays clean-clone safe.
+
+## 2026-05-06T01:20:04Z - task-2-protocol
+
+- `packages/protocol` now owns the shared terminal frame contract with constants, TypeScript frame types, base64 helpers, and runtime validation for all planned frame types.
+- The root Vitest include works from the repo root, but workspace-local protocol tests need a package-local `vitest.config.ts` so `npm test --workspace packages/protocol -- --run` discovers `src/index.test.ts`.

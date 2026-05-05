@@ -1,0 +1,11 @@
+2026-05-06T01:20:04Z - task-2-protocol
+
+Oversized decoded data frame scenario verified by `npm test --workspace packages/protocol -- --run`.
+
+Result:
+- Test Files: 1 passed (1)
+- Tests: 11 passed (11)
+
+Coverage evidence:
+- A base64 `input` payload decoding to 4097 bytes is rejected.
+- The validator returns `FRAME_TOO_LARGE` and does not produce a valid frame.

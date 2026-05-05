@@ -211,7 +211,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `chore(scaffold): initialize TypeScript workspace` | Files: `package.json`, `package-lock.json`, `apps/**`, `packages/**`, config files, `.github/workflows/ci.yml`
 
-- [ ] 2. Implement Shared Framed Protocol and Validation
+- [x] 2. Implement Shared Framed Protocol and Validation
 
   **What to do**: In `packages/protocol`, define TypeScript types, runtime validators, constants, and tests for all frame types: `connect`, `connect_ack`, `input`, `resize`, `output`, `error`, `close`, `ping`, `pong`. Use JSON frames with base64 terminal data. Enforce max decoded data frame `4096` bytes, max POST body assumption `8KiB`, resize bounds cols `20-300`, rows `5-120`, port `1-65535`, nonempty host/username/password. Include sanitized error-code enum: `VALIDATION_ERROR`, `SSH_AUTH_FAILED`, `SSH_CONNECT_FAILED`, `SSH_TIMEOUT`, `SESSION_CLOSED`, `FRAME_TOO_LARGE`, `INTERNAL_ERROR`.
   **Must NOT do**: Do not add networking code, SSH code, UI code, or schema fields not listed in the Protocol Contract.

@@ -1,0 +1,13 @@
+2026-05-06T01:20:04Z - task-2-protocol
+
+Valid protocol scenario verified by `npm test --workspace packages/protocol -- --run`.
+
+Result:
+- Test Files: 1 passed (1)
+- Tests: 11 passed (11)
+
+Coverage evidence:
+- Valid `connect` frame passes with nonempty host, SSH port, credentials, and resize dimensions.
+- Valid `input` and `output` frames pass with base64 terminal data.
+- Valid `resize`, `connect_ack`, `error`, `close`, `ping`, and `pong` frames pass.
+- Base64 helpers round-trip Unicode and multiline pasted input.

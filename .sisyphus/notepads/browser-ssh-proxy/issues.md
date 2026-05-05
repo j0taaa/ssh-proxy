@@ -12,3 +12,7 @@
 ## 2026-05-05T17:12:02Z - task-1-next-env-clean-clone-correction
 
 - Earlier verification missed that Next regenerated the `.next/dev/types/routes.d.ts` import after E2E/dev; corrected by adding a sanitizer and proving the final `next-env.d.ts` content has no `.next` import after all required commands.
+
+## 2026-05-06T01:20:04Z - task-2-protocol
+
+- `apps/web/app/page.tsx` still imports `scaffoldStatus`; the protocol package keeps a non-placeholder compatibility export so root typecheck remains green without touching web UI in this task.
