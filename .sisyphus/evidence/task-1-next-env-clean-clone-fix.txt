@@ -1,0 +1,68 @@
+Task 1 next-env clean-clone fix evidence - 2026-05-05T17:11:34Z
+
+$ npm run typecheck
+
+> ssh-proxy@0.0.0 typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> @ssh-proxy/web@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @ssh-proxy/gateway@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @ssh-proxy/protocol@0.0.0 typecheck
+> tsc --noEmit
+
+
+$ npm run lint
+
+> ssh-proxy@0.0.0 lint
+> eslint .
+
+
+$ npm test
+
+> ssh-proxy@0.0.0 test
+> vitest run
+
+
+ RUN  v4.1.5 /home/ssh-proxy
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  01:11:39
+   Duration  165ms (transform 23ms, setup 0ms, import 39ms, tests 3ms, environment 0ms)
+
+
+$ npm run test:e2e
+
+> ssh-proxy@0.0.0 test:e2e
+> playwright install chromium && playwright test && node scripts/sanitize-next-env.mjs
+
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/e2e/scaffold.spec.ts:3:5 › web scaffold renders without SSH behavior (795ms)
+
+  1 passed (2.9s)
+
+$ Live browser page/favicon console-clean check
+page status: 200
+favicon status: 200
+console errors: 0
+page errors: 0
+
+$ apps/web/next-env.d.ts
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+
+// This file is kept source-controlled so clean clones do not depend on ignored .next artifacts.
+

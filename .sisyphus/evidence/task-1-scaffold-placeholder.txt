@@ -1,0 +1,19 @@
+Task 1 scaffold placeholder evidence - 2026-05-05T16:58:16Z
+
+$ PORT=3101 npm run dev:gateway; GET /healthz
+200 {"ok":true}
+
+Gateway process log:
+
+> ssh-proxy@0.0.0 dev:gateway
+> npm run dev --workspace apps/gateway
+
+> @ssh-proxy/gateway@0.0.0 dev
+> tsx src/index.ts
+
+Gateway scaffold listening on http://127.0.0.1:3101
+
+The gateway process was terminated after the health check completed.
+
+$ source-scope search for forbidden implementation paths
+No forbidden SSH implementation or fake success paths found in scaffold source files.

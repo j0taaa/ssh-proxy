@@ -1,0 +1,76 @@
+Task 1 scaffold command evidence - 2026-05-05T16:57:40Z
+
+$ npm install
+
+added 5 packages, and audited 210 packages in 11s
+
+67 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+$ npm run typecheck
+
+> ssh-proxy@0.0.0 typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> @ssh-proxy/web@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @ssh-proxy/gateway@0.0.0 typecheck
+> tsc --noEmit
+
+
+> @ssh-proxy/protocol@0.0.0 typecheck
+> tsc --noEmit
+
+
+$ npm run lint
+
+> ssh-proxy@0.0.0 lint
+> eslint .
+
+
+$ npm test
+
+> ssh-proxy@0.0.0 test
+> vitest run
+
+
+ RUN  v4.1.5 /home/ssh-proxy
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  00:57:58
+   Duration  186ms (transform 22ms, setup 0ms, import 36ms, tests 3ms, environment 0ms)
+
+
+$ npm run test:e2e
+
+> ssh-proxy@0.0.0 test:e2e
+> playwright install chromium && playwright test
+
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › tests/e2e/scaffold.spec.ts:3:5 › web scaffold renders without SSH behavior (1.5s)
+
+  1 passed (6.8s)
+
+$ npm run docker:smoke
+
+> ssh-proxy@0.0.0 docker:smoke
+> node scripts/docker-smoke-placeholder.mjs
+
+Docker production files are intentionally out of scope for task 1; smoke placeholder passes until Docker is implemented.

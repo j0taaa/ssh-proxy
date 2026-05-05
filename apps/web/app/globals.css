@@ -1,0 +1,36 @@
+:root {
+  color-scheme: light dark;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #101820;
+  color: #f7fafc;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  align-items: center;
+  display: flex;
+  min-height: 100vh;
+  justify-content: center;
+  padding: 2rem;
+}
+
+section {
+  border: 1px solid #345;
+  border-radius: 1rem;
+  max-width: 42rem;
+  padding: 2rem;
+}
+
+.eyebrow {
+  color: #9cc9ff;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.note {
+  color: #f7c46c;
+}

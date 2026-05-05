@@ -1,0 +1,17 @@
+{
+  "name": "@ssh-proxy/gateway",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@ssh-proxy/protocol": "0.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  }
+}
