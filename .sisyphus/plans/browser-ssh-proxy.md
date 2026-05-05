@@ -607,7 +607,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `build(docker): add production compose smoke validation` | Files: `Dockerfile*`, `docker-compose.yml`, scripts, README updates
 
-- [ ] 12. Write README Runbook and Security Warnings
+- [x] 12. Write README Runbook and Security Warnings
 
   **What to do**: Expand `README.md` with project overview, architecture diagram/text, dev commands, test commands, Docker production instructions, reverse proxy guidance, transport behavior, protocol limits, and explicit unsafe-mode warnings. Warnings must say: no built-in app auth, localStorage password storage is unsafe, auto-accepted host keys are MITM-vulnerable, arbitrary targets can reach networks visible to the gateway, do not expose publicly without external protection. Document exclusions: no key auth, SFTP, port forwarding, RBAC, database persistence, terminal recording.
   **Must NOT do**: Do not claim this is safe for public multi-user use; do not document unimplemented features.
