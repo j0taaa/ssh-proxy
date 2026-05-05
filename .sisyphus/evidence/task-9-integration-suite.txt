@@ -1,0 +1,29 @@
+Task 9 integration suite evidence
+Timestamp: 2026-05-05T20:50:41Z
+
+Changed-file diagnostics:
+- lsp_diagnostics apps/gateway/src/ssh-session.ts: no diagnostics
+- lsp_diagnostics apps/gateway/src/session-manager.test.ts: no diagnostics
+- lsp_diagnostics apps/gateway/src/terminal-ws.test.ts: no diagnostics
+- lsp_diagnostics apps/gateway/src/terminal-http.test.ts: no diagnostics
+- lsp_diagnostics apps/gateway/src/test-utils/mock-ssh-server.ts: no diagnostics
+- lsp_diagnostics apps/gateway/src/test-utils/gateway-test-utils.ts: no diagnostics
+
+Required commands:
+- npm test: PASS, 4 test files passed, 32 tests passed
+- npm test --workspace apps/gateway -- --run: PASS, 3 test files passed, 21 tests passed
+- npm run typecheck: PASS across @ssh-proxy/web, @ssh-proxy/gateway, @ssh-proxy/protocol
+- npm run lint: PASS after removing unused test imports
+- npm run test:e2e: PASS, 1 Chromium Playwright test passed, next-env sanitizer ran
+
+Coverage added/expanded:
+- Shared deterministic mock SSH server harness accepts testuser/testpass and rejects bad credentials.
+- Gateway core covers password auth shell creation, prompt/echo behavior, resize recording, Unicode and multiline input, bad credentials, unreachable host, timeout sanitization, idle/channel cleanup, invalid host/port/resize validation, and password redaction in captured logs.
+- WSS covers connect_ack, command echo round trip, invalid host/port/JSON/oversized decoded frames, resize forwarding, heartbeat, and tab-style disconnect cleanup.
+- SSE+POST covers session creation, live SSE output after subscription, POST input, CORS preflight behavior, resize forwarding, invalid create validation, oversized decoded frame/body handling, bad auth with redacted logs, SSE reconnect, large output bursts, Unicode, multiline paste, and explicit close cleanup.
+
+Forbidden-scope and anti-pattern scan:
+- grep for TODO/FIXME/HACK/@ts-ignore/as any, SSH key auth, SFTP, file transfer, port forwarding, terminal recording, app auth, user accounts, password logging, terminal input/output logging, raw SSH errors, and credentials under apps/gateway/src: no matches.
+
+Completion notification:
+- curl -fsS -d "Task 9 mock SSH integration coverage complete: tests/typecheck/lint/e2e passed" https://ntfy.sh/codex_jaypussy: PASS, message id YR88fIe80Q9C.

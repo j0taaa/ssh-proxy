@@ -1,0 +1,14 @@
+Task 9 cleanup evidence
+Timestamp: 2026-05-05T20:50:41Z
+
+Cleanup scenarios verified by automated tests:
+- SessionManager explicit close removes the session and the mock SSH server records channel close.
+- SessionManager channel close removes the managed session when mock input exit\n closes the SSH channel.
+- SessionManager idle timeout removes the managed session with reason idle_timeout.
+- WSS tab/network-style disconnect closes the WebSocket, returns gateway session count to 0, and the mock SSH channel closes.
+- SSE+POST explicit close frame returns 202, returns gateway session count to 0, and the mock SSH channel closes.
+- SSE client disconnect cleanup removes stream listeners without closing the SSH session, and reconnecting to the same in-memory session continues to receive live output.
+
+Commands proving cleanup behavior:
+- npm test --workspace apps/gateway -- --run src/session-manager.test.ts src/terminal-ws.test.ts src/terminal-http.test.ts: PASS, 21 tests passed.
+- npm test --workspace apps/gateway -- --run: PASS, 3 test files passed, 21 tests passed.
