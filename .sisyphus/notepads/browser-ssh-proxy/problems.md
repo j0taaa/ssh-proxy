@@ -18,3 +18,7 @@
 ## 2026-05-06T18:40:00Z - task-7-xterm-terminal
 
 - No unresolved Task 7 blockers remain. Transport connection wiring (Task 8), Playwright E2E coverage for SSH flows, Docker production files, and README updates remain out of scope for later tasks.
+
+## 2026-05-06T04:36:00Z - task-8-frontend-transport
+
+- No unresolved Task 8 blockers remain. App auth, credential persistence beyond the existing optional localStorage checkbox, SSH key auth, SFTP, port forwarding, terminal recording, and reconnect/resume beyond existing SSE reconnect behavior remain out of scope.

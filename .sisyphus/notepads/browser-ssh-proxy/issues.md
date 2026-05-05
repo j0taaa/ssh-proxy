@@ -36,3 +36,9 @@
 
 - The `forceHttp` state is tracked inside ConnectionForm but not yet consumed by any transport client; Task 8 will integrate it into transport selection.
 - Connection status transitions to "connecting" on valid Connect click but stays there indefinitely since no transport is wired yet; Task 8 will manage the actual status lifecycle.
+
+## 2026-05-06T04:36:00Z - task-8-frontend-transport
+
+- `rg` is not installed in this environment, so the forbidden-pattern source scan used `grep -RInE` with `node_modules` and `.next` excluded.
+- Manual QA initially hit a stale `scripts/mock-harness.mts` process occupying ports `2222` and `3001`; identified it with `lsof`, stopped only that stale process, then ran a temporary mock SSH harness from `/tmp/opencode`.
+- No unresolved Task 8 issues remain.

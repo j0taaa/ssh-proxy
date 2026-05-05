@@ -61,3 +61,9 @@
 - `FitAddon.fit()` can throw if the container element is not yet visible (zero dimensions); wrapping in try/catch is necessary.
 - The test harness route at `apps/web/app/terminal-test/page.tsx` provides echo-mode verification without any backend transport.
 - Resize events are debounced at 100ms and only emitted when cols/rows change within protocol bounds (20-300 cols, 5-120 rows).
+
+## 2026-05-06T04:36:00Z - task-8-frontend-transport
+
+- Browser HTTP fallback from `http://127.0.0.1:3000` to `http://localhost:3001` requires CORS on the fallback routes because JSON POSTs trigger preflight; the minimal gateway support is `OPTIONS`, reflected `Access-Control-Allow-Origin` for localhost dev origins, and SSE/JSON response headers.
+- Forced HTTP fallback opens `POST /sessions`, `GET /sse/terminal/:sessionId/events`, and per-keystroke `POST /sse/terminal/:sessionId/input` requests, while the checkbox path avoids creating a WebSocket entirely.
+- WSS and HTTP fallback manual QA should type a live command after connection because HTTP SSE does not replay shell output emitted before the EventSource subscribes.

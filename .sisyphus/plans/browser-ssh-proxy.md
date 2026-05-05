@@ -449,7 +449,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `feat(web): add xterm terminal component` | Files: `apps/web/**`
 
-- [ ] 8. Integrate Frontend Transport Client with UI and Terminal
+- [x] 8. Integrate Frontend Transport Client with UI and Terminal
 
   **What to do**: Implement a frontend transport client that tries WSS first and falls back to SSE+POST after `3s`, WSS failure, or force-fallback setting. Wire connection form to create sessions, wire xterm input/resize to protocol frames, wire output/error/close frames to terminal/status UI, and support explicit disconnect. Use gateway URL from `NEXT_PUBLIC_GATEWAY_URL`, default `http://localhost:3001` in dev. Convert terminal strings to/from base64 frame payloads through `packages/protocol` helpers.
   **Must NOT do**: Do not add app auth, backend credential persistence, reconnect/resume beyond current SSE reconnect behavior, or unbounded frame buffering.
