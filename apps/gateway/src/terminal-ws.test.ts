@@ -1,7 +1,7 @@
 import { once } from "node:events";
 import { afterEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
-import { DATA_FRAME_MAX_DECODED_BYTES, ProtocolErrorCode, decodeBase64, type TerminalFrame } from "@ssh-proxy/protocol";
+import { DATA_FRAME_MAX_DECODED_BYTES, ProtocolErrorCode, decodeBase64ToBytes, type TerminalFrame } from "@ssh-proxy/protocol";
 import { connectFrame, inputFrame, isTerminalFrame, outputText, resizeFrame, startGateway } from "./test-utils/gateway-test-utils.js";
 import { startMockSshServer } from "./test-utils/mock-ssh-server.js";
 
@@ -45,6 +45,25 @@ describe("terminal WebSocket transport", () => {
     webSocket.send(JSON.stringify(resizeFrame("wss-resize", 120, 36)));
 
     await expect(sshServer.waitForResize(120, 36)).resolves.toBeUndefined();
+  });
+
+  it("splits a single large SSH output chunk into protocol-sized output frames", async () => {
+    const sshServer = await startMockSshServer();
+    const gateway = await startGateway();
+    const webSocket = await openWebSocket(gateway.wsUrl);
+    const collector = new WebSocketFrameCollector(webSocket);
+    cleanupTasks.push(() => closeWebSocket(webSocket), gateway.close, sshServer.close);
+
+    webSocket.send(JSON.stringify(connectFrame("wss-large-output", sshServer.port)));
+    await collector.waitForFrame("connect_ack");
+
+    const outputPromise = collector.waitForOutputFrames("café-雪\nmock$ ");
+    sshServer.writeOutput(`small-output\n${"z".repeat(4097)}café-雪\nmock$ `);
+
+    const outputs = await outputPromise;
+    expect(outputs.length).toBeGreaterThanOrEqual(2);
+    expect(outputs.map(decodedOutputByteLength).every((byteLength) => byteLength <= DATA_FRAME_MAX_DECODED_BYTES)).toBe(true);
+    expect(outputs.map(outputText).join("")).toContain(`${"z".repeat(4097)}café-雪`);
   });
 
   it("rejects invalid host, port, JSON, and oversized decoded frames with sanitized validation errors", async () => {
@@ -120,6 +139,48 @@ function closeWebSocket(webSocket: WebSocket): Promise<void> {
   });
 }
 
+class WebSocketFrameCollector {
+  private readonly pendingFrames: TerminalFrame[] = [];
+
+  constructor(webSocket: WebSocket) {
+    webSocket.on("message", (data) => {
+      const frame = JSON.parse(data.toString("utf8")) as unknown;
+      if (isTerminalFrame(frame)) {
+        this.pendingFrames.push(frame);
+      }
+    });
+  }
+
+  async waitForFrame<TType extends TerminalFrame["type"]>(type: TType, timeoutMs = 2_000): Promise<Extract<TerminalFrame, { type: TType }>> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const frameIndex = this.pendingFrames.findIndex((frame) => frame.type === type);
+      if (frameIndex >= 0) {
+        const [frame] = this.pendingFrames.splice(frameIndex, 1);
+        return frame as Extract<TerminalFrame, { type: TType }>;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error(`Expected ${type} frame`);
+  }
+
+  async waitForOutputFrames(expected: string): Promise<Array<Extract<TerminalFrame, { type: "output" }>>> {
+    let received = "";
+    const outputs: Array<Extract<TerminalFrame, { type: "output" }>> = [];
+    const deadline = Date.now() + 2_000;
+    while (Date.now() < deadline) {
+      const output = await this.waitForFrame("output", Math.max(1, deadline - Date.now()));
+      expect(decodedOutputByteLength(output)).toBeLessThanOrEqual(DATA_FRAME_MAX_DECODED_BYTES);
+      outputs.push(output);
+      received += outputText(output);
+      if (received.includes(expected)) {
+        return outputs;
+      }
+    }
+    throw new Error(`Expected output ${expected}`);
+  }
+}
+
 async function waitForFrame<TType extends TerminalFrame["type"]>(webSocket: WebSocket, type: TType, timeoutMs = 2_000): Promise<Extract<TerminalFrame, { type: TType }>> {
   return new Promise((resolve, reject) => {
     const observed: TerminalFrame[] = [];
@@ -143,18 +204,28 @@ async function waitForFrame<TType extends TerminalFrame["type"]>(webSocket: WebS
 }
 
 async function waitForOutputText(webSocket: WebSocket, expected: string): Promise<string> {
+  return (await waitForOutputFrames(webSocket, expected)).map(outputText).join("");
+}
+
+async function waitForOutputFrames(webSocket: WebSocket, expected: string): Promise<Array<Extract<TerminalFrame, { type: "output" }>>> {
   let received = "";
+  const outputs: Array<Extract<TerminalFrame, { type: "output" }>> = [];
   const deadline = Date.now() + 2_000;
   while (Date.now() < deadline) {
     const output = await waitForFrame(webSocket, "output", Math.max(1, deadline - Date.now()));
     const chunk = outputText(output);
-    expect(decodeBase64(output.dataBase64).length).toBeLessThanOrEqual(DATA_FRAME_MAX_DECODED_BYTES + 8);
+    expect(decodedOutputByteLength(output)).toBeLessThanOrEqual(DATA_FRAME_MAX_DECODED_BYTES);
+    outputs.push(output);
     received += chunk;
     if (received.includes(expected)) {
-      return received;
+      return outputs;
     }
   }
   throw new Error(`Expected output ${expected}`);
+}
+
+function decodedOutputByteLength(output: Extract<TerminalFrame, { type: "output" }>): number {
+  return decodeBase64ToBytes(output.dataBase64).byteLength;
 }
 
 async function waitForGatewaySize(gateway: { size(): number }, expected: number): Promise<void> {

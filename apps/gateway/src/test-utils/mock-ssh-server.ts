@@ -12,6 +12,7 @@ export interface MockSshServer {
   waitForInput(expected: string): Promise<void>;
   waitForResize(cols: number, rows: number): Promise<void>;
   waitForChannelClose(): Promise<void>;
+  writeOutput(value: string): void;
 }
 
 export async function startMockSshServer(options: { closeOnInput?: string } = {}): Promise<MockSshServer> {
@@ -19,6 +20,7 @@ export async function startMockSshServer(options: { closeOnInput?: string } = {}
   const inputs: string[] = [];
   const resizes: Array<{ cols: number; rows: number }> = [];
   const clients: Connection[] = [];
+  const channels: ServerChannel[] = [];
   const server = new Server({ hostKeys: [hostKey] });
   let shellReadyCount = 0;
   let channelCloseCount = 0;
@@ -36,7 +38,7 @@ export async function startMockSshServer(options: { closeOnInput?: string } = {}
     client.on("ready", () => {
       client.on("session", (accept, reject) => {
         const session = accept();
-        wireSession(session, inputs, resizes, options, () => {
+        wireSession(session, inputs, resizes, channels, options, () => {
           shellReadyCount += 1;
         }, () => {
           channelCloseCount += 1;
@@ -68,7 +70,15 @@ export async function startMockSshServer(options: { closeOnInput?: string } = {}
       }),
     waitForInput: (expected: string) => waitUntil(() => inputs.join("").includes(expected), `Expected input ${expected}`),
     waitForResize: (cols: number, rows: number) => waitUntil(() => resizes.some((resize) => resize.cols === cols && resize.rows === rows), `Expected resize ${cols}x${rows}`),
-    waitForChannelClose: () => waitUntil(() => channelCloseCount > 0, "Expected SSH channel close")
+    waitForChannelClose: () => waitUntil(() => channelCloseCount > 0, "Expected SSH channel close"),
+    writeOutput: (value: string) => {
+      if (channels.length === 0) {
+        throw new Error("Expected open SSH channel");
+      }
+      for (const channel of channels) {
+        channel.write(value);
+      }
+    }
   };
 }
 
@@ -76,6 +86,7 @@ function wireSession(
   session: Session,
   inputs: string[],
   resizes: Array<{ cols: number; rows: number }>,
+  channels: ServerChannel[],
   options: { closeOnInput?: string },
   onShellReady: () => void,
   onChannelClose: () => void,
@@ -95,6 +106,7 @@ function wireSession(
   });
   session.on("shell", (accept) => {
     const channel = accept();
+    channels.push(channel);
     onShellReady();
     wireShell(channel, inputs, options, onChannelClose);
   });
@@ -126,6 +138,9 @@ function wireShell(channel: ServerChannel, inputs: string[], options: { closeOnI
       return;
     }
     channel.write(Buffer.from(input, "utf8"));
+    if (input.includes("single-large-output")) {
+      channel.write(`${"z".repeat(4097)}café-雪\n`);
+    }
     channel.write("mock$ ");
   });
 }

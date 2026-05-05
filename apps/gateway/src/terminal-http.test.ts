@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { DATA_FRAME_MAX_DECODED_BYTES, MAX_POST_BODY_BYTES, ProtocolErrorCode, decodeBase64, type TerminalFrame } from "@ssh-proxy/protocol";
+import { DATA_FRAME_MAX_DECODED_BYTES, MAX_POST_BODY_BYTES, ProtocolErrorCode, decodeBase64ToBytes, type TerminalFrame } from "@ssh-proxy/protocol";
 import { connectFrame, inputFrame, isTerminalFrame, outputText, resizeFrame, startGateway } from "./test-utils/gateway-test-utils.js";
 import { startMockSshServer } from "./test-utils/mock-ssh-server.js";
 
@@ -174,6 +174,25 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
     await sshServer.waitForInput("burst\n");
   });
 
+  it("splits a single large SSH output chunk into protocol-sized SSE output frames", async () => {
+    const sshServer = await startMockSshServer();
+    const gateway = await startGateway();
+    cleanupTasks.push(gateway.close, sshServer.close);
+    const sessionId = "http-large-output";
+
+    await expect(postJson(`${gateway.url}/sessions`, connectFrame(sessionId, sshServer.port))).resolves.toMatchObject({ status: 201 });
+    const sseClient = await SseClient.open(`${gateway.url}/sse/terminal/${sessionId}/events`);
+    cleanupTasks.unshift(() => sseClient.close());
+
+    await expect(postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, inputFrame(sessionId, "single-large-output\n"))).resolves.toMatchObject({ status: 202 });
+
+    const outputs = await waitForOutputFrames(sseClient, "mock$ ");
+    expect(outputs.length).toBeGreaterThanOrEqual(2);
+    expect(outputs.map(decodedOutputByteLength).every((byteLength) => byteLength <= DATA_FRAME_MAX_DECODED_BYTES)).toBe(true);
+    expect(outputs.map(outputText).join("")).toContain(`${"z".repeat(4097)}café-雪`);
+    await sshServer.waitForInput("single-large-output\n");
+  });
+
   it("explicit close POST closes SSH and removes the managed session", async () => {
     const sshServer = await startMockSshServer();
     const gateway = await startGateway();
@@ -279,16 +298,26 @@ async function postJson(url: string, body: object, headers: HeadersInit = {}): P
 }
 
 async function waitForOutputText(sseClient: SseClient, expected: string): Promise<string> {
+  return (await waitForOutputFrames(sseClient, expected)).map(outputText).join("");
+}
+
+async function waitForOutputFrames(sseClient: SseClient, expected: string): Promise<Array<Extract<TerminalFrame, { type: "output" }>>> {
   let received = "";
+  const outputs: Array<Extract<TerminalFrame, { type: "output" }>> = [];
   const deadline = Date.now() + 2_000;
   while (Date.now() < deadline) {
     const output = await sseClient.waitForFrame("output", Math.max(1, deadline - Date.now()));
     const chunk = outputText(output);
-    expect(decodeBase64(output.dataBase64).length).toBeLessThanOrEqual(DATA_FRAME_MAX_DECODED_BYTES + 8);
+    expect(decodedOutputByteLength(output)).toBeLessThanOrEqual(DATA_FRAME_MAX_DECODED_BYTES);
+    outputs.push(output);
     received += chunk;
     if (received.includes(expected)) {
-      return received;
+      return outputs;
     }
   }
   throw new Error(`Expected output ${expected}`);
+}
+
+function decodedOutputByteLength(output: Extract<TerminalFrame, { type: "output" }>): number {
+  return decodeBase64ToBytes(output.dataBase64).byteLength;
 }
