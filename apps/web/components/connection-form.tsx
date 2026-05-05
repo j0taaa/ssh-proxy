@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useId } from "react";
-
-type ConnectionStatus = "disconnected" | "connecting" | "connected";
+import type { ConnectionStatus, TransportType } from "../lib/transport";
 
 interface FormFields {
   host: string;
@@ -18,6 +17,14 @@ interface ValidationErrors {
   port?: string;
   username?: string;
   password?: string;
+}
+
+export interface ConnectionFormProps {
+  status: ConnectionStatus;
+  transport: TransportType | null;
+  errorMessage: string | null;
+  onConnect: (fields: FormFields) => void;
+  onDisconnect: () => void;
 }
 
 const STORAGE_KEYS = {
@@ -99,7 +106,13 @@ function validateForm(fields: FormFields): ValidationErrors {
   return errors;
 }
 
-export default function ConnectionForm() {
+export default function ConnectionForm({
+  status,
+  transport,
+  errorMessage,
+  onConnect,
+  onDisconnect,
+}: ConnectionFormProps) {
   const [host, setHost] = useState("");
   const [port, setPort] = useState(DEFAULT_PORT);
   const [username, setUsername] = useState("");
@@ -107,7 +120,6 @@ export default function ConnectionForm() {
   const [rememberPassword, setRememberPassword] = useState(false);
   const [forceHttp, setForceHttp] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [status, setStatus] = useState<ConnectionStatus>("disconnected");
   const [hydrated, setHydrated] = useState(false);
 
   const hostId = useId();
@@ -174,14 +186,14 @@ export default function ConnectionForm() {
 
       setErrors({});
       saveToStorage(fields);
-      setStatus("connecting");
+      onConnect(fields);
     },
-    [host, port, username, password, rememberPassword, forceHttp],
+    [host, port, username, password, rememberPassword, forceHttp, onConnect],
   );
 
   const handleDisconnect = useCallback(() => {
-    setStatus("disconnected");
-  }, []);
+    onDisconnect();
+  }, [onDisconnect]);
 
   const statusLabel: Record<ConnectionStatus, string> = {
     disconnected: "Disconnected",
@@ -198,230 +210,242 @@ export default function ConnectionForm() {
   const isFormDisabled = status === "connecting" || status === "connected";
 
   return (
-    <div className="page-layout">
-      <div className="form-card">
-        <div className="form-header">
-          <p className="eyebrow">Browser SSH Proxy</p>
-          <h1>Connect to SSH Server</h1>
-        </div>
+    <div className="form-card">
+      <div className="form-header">
+        <p className="eyebrow">Browser SSH Proxy</p>
+        <h1>Connect to SSH Server</h1>
+      </div>
 
-        <div
-          className="warning-box"
-          data-testid="warning-box"
-          role="alert"
-        >
-          <p className="warning-title">Unsafe by Design</p>
-          <ul className="warning-list">
-            <li>
-              No built-in application authentication &mdash; anyone with
-              network access can use this tool
-            </li>
-            <li>
-              Arbitrary SSH targets are allowed &mdash; the gateway can reach
-              any host visible to it
-            </li>
-            <li>
-              Passwords stored in browser localStorage when remembered &mdash;
-              this is not encrypted storage
-            </li>
-            <li>
-              SSH host keys are automatically accepted &mdash; connections are
-              vulnerable to man-in-the-middle attacks
-            </li>
-          </ul>
-        </div>
+      <div
+        className="warning-box"
+        data-testid="warning-box"
+        role="alert"
+      >
+        <p className="warning-title">Unsafe by Design</p>
+        <ul className="warning-list">
+          <li>
+            No built-in application authentication &mdash; anyone with
+            network access can use this tool
+          </li>
+          <li>
+            Arbitrary SSH targets are allowed &mdash; the gateway can reach
+            any host visible to it
+          </li>
+          <li>
+            Passwords stored in browser localStorage when remembered &mdash;
+            this is not encrypted storage
+          </li>
+          <li>
+            SSH host keys are automatically accepted &mdash; connections are
+            vulnerable to man-in-the-middle attacks
+          </li>
+        </ul>
+      </div>
 
-        <form
-          onSubmit={handleConnect}
-          data-testid="connection-form"
-          noValidate
-        >
-          <div className="form-row">
-            <div className="form-group form-group-grow">
-              <label htmlFor={hostId}>Host</label>
-              <input
-                id={hostId}
-                type="text"
-                value={host}
-                onChange={(e) => {
-                  setHost(e.target.value);
-                  clearFieldError("host");
-                }}
-                placeholder="e.g. 192.168.1.1"
-                disabled={isFormDisabled}
-                data-testid="host-input"
-                aria-invalid={!!errors.host}
-                aria-describedby={errors.host ? `${hostId}-error` : undefined}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              {errors.host && (
-                <span
-                  id={`${hostId}-error`}
-                  className="field-error"
-                  data-testid="host-error"
-                  role="alert"
-                >
-                  {errors.host}
-                </span>
-              )}
-            </div>
-
-            <div className="form-group form-group-port">
-              <label htmlFor={portId}>Port</label>
-              <input
-                id={portId}
-                type="number"
-                value={port}
-                onChange={(e) => {
-                  setPort(e.target.value);
-                  clearFieldError("port");
-                }}
-                step={1}
-                min={1}
-                max={65535}
-                disabled={isFormDisabled}
-                data-testid="port-input"
-                aria-invalid={!!errors.port}
-                aria-describedby={errors.port ? `${portId}-error` : undefined}
-                autoComplete="off"
-              />
-              {errors.port && (
-                <span
-                  id={`${portId}-error`}
-                  className="field-error"
-                  data-testid="port-error"
-                  role="alert"
-                >
-                  {errors.port}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor={usernameId}>Username</label>
+      <form
+        onSubmit={handleConnect}
+        data-testid="connection-form"
+        noValidate
+      >
+        <div className="form-row">
+          <div className="form-group form-group-grow">
+            <label htmlFor={hostId}>Host</label>
             <input
-              id={usernameId}
+              id={hostId}
               type="text"
-              value={username}
+              value={host}
               onChange={(e) => {
-                setUsername(e.target.value);
-                clearFieldError("username");
+                setHost(e.target.value);
+                clearFieldError("host");
               }}
-              placeholder="SSH username"
+              placeholder="e.g. 192.168.1.1"
               disabled={isFormDisabled}
-              data-testid="username-input"
-              aria-invalid={!!errors.username}
-              aria-describedby={
-                errors.username ? `${usernameId}-error` : undefined
-              }
+              data-testid="host-input"
+              aria-invalid={!!errors.host}
+              aria-describedby={errors.host ? `${hostId}-error` : undefined}
               autoComplete="off"
               spellCheck={false}
             />
-            {errors.username && (
+            {errors.host && (
               <span
-                id={`${usernameId}-error`}
+                id={`${hostId}-error`}
                 className="field-error"
-                data-testid="username-error"
+                data-testid="host-error"
                 role="alert"
               >
-                {errors.username}
+                {errors.host}
               </span>
             )}
           </div>
 
-          <div className="form-group">
-            <label htmlFor={passwordId}>Password</label>
+          <div className="form-group form-group-port">
+            <label htmlFor={portId}>Port</label>
             <input
-              id={passwordId}
-              type="password"
-              value={password}
+              id={portId}
+              type="number"
+              value={port}
               onChange={(e) => {
-                setPassword(e.target.value);
-                clearFieldError("password");
+                setPort(e.target.value);
+                clearFieldError("port");
               }}
-              placeholder="SSH password"
+              step={1}
+              min={1}
+              max={65535}
               disabled={isFormDisabled}
-              data-testid="password-input"
-              aria-invalid={!!errors.password}
-              aria-describedby={
-                errors.password ? `${passwordId}-error` : undefined
-              }
+              data-testid="port-input"
+              aria-invalid={!!errors.port}
+              aria-describedby={errors.port ? `${portId}-error` : undefined}
               autoComplete="off"
             />
-            {errors.password && (
+            {errors.port && (
               <span
-                id={`${passwordId}-error`}
+                id={`${portId}-error`}
                 className="field-error"
-                data-testid="password-error"
+                data-testid="port-error"
                 role="alert"
               >
-                {errors.password}
+                {errors.port}
               </span>
             )}
           </div>
-
-          <div className="checkbox-group">
-            <input
-              id={rememberId}
-              type="checkbox"
-              checked={rememberPassword}
-              onChange={(e) => setRememberPassword(e.target.checked)}
-              disabled={isFormDisabled}
-              data-testid="remember-password-checkbox"
-            />
-            <label htmlFor={rememberId}>
-              Remember password on this browser
-            </label>
-          </div>
-
-          <div className="checkbox-group">
-            <input
-              id={forceHttpId}
-              type="checkbox"
-              checked={forceHttp}
-              onChange={(e) => setForceHttp(e.target.checked)}
-              disabled={isFormDisabled}
-              data-testid="force-http-checkbox"
-            />
-            <label htmlFor={forceHttpId}>Force HTTP fallback</label>
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isFormDisabled}
-              data-testid="connect-button"
-            >
-              Connect
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger"
-              disabled={status === "disconnected"}
-              onClick={handleDisconnect}
-              data-testid="disconnect-button"
-            >
-              Disconnect
-            </button>
-          </div>
-        </form>
-
-        <div
-          className="status-bar"
-          data-testid="connection-status"
-          role="status"
-        >
-          <span className={statusDotClass[status]} />
-          <span>{statusLabel[status]}</span>
         </div>
+
+        <div className="form-group">
+          <label htmlFor={usernameId}>Username</label>
+          <input
+            id={usernameId}
+            type="text"
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              clearFieldError("username");
+            }}
+            placeholder="SSH username"
+            disabled={isFormDisabled}
+            data-testid="username-input"
+            aria-invalid={!!errors.username}
+            aria-describedby={
+              errors.username ? `${usernameId}-error` : undefined
+            }
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {errors.username && (
+            <span
+              id={`${usernameId}-error`}
+              className="field-error"
+              data-testid="username-error"
+              role="alert"
+            >
+              {errors.username}
+            </span>
+          )}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor={passwordId}>Password</label>
+          <input
+            id={passwordId}
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearFieldError("password");
+            }}
+            placeholder="SSH password"
+            disabled={isFormDisabled}
+            data-testid="password-input"
+            aria-invalid={!!errors.password}
+            aria-describedby={
+              errors.password ? `${passwordId}-error` : undefined
+            }
+            autoComplete="off"
+          />
+          {errors.password && (
+            <span
+              id={`${passwordId}-error`}
+              className="field-error"
+              data-testid="password-error"
+              role="alert"
+            >
+              {errors.password}
+            </span>
+          )}
+        </div>
+
+        <div className="checkbox-group">
+          <input
+            id={rememberId}
+            type="checkbox"
+            checked={rememberPassword}
+            onChange={(e) => setRememberPassword(e.target.checked)}
+            disabled={isFormDisabled}
+            data-testid="remember-password-checkbox"
+          />
+          <label htmlFor={rememberId}>
+            Remember password on this browser
+          </label>
+        </div>
+
+        <div className="checkbox-group">
+          <input
+            id={forceHttpId}
+            type="checkbox"
+            checked={forceHttp}
+            onChange={(e) => setForceHttp(e.target.checked)}
+            disabled={isFormDisabled}
+            data-testid="force-http-checkbox"
+          />
+          <label htmlFor={forceHttpId}>Force HTTP fallback</label>
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isFormDisabled}
+            data-testid="connect-button"
+          >
+            Connect
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            disabled={status === "disconnected"}
+            onClick={handleDisconnect}
+            data-testid="disconnect-button"
+          >
+            Disconnect
+          </button>
+        </div>
+      </form>
+
+      <div
+        className="status-bar"
+        data-testid="connection-status"
+        role="status"
+      >
+        <span className={statusDotClass[status]} />
+        <span>{statusLabel[status]}</span>
+        {transport && (
+          <span
+            className="transport-label"
+            data-testid="transport-type"
+          >
+            via {transport === "wss" ? "WSS" : "HTTP fallback"}
+          </span>
+        )}
       </div>
 
-      <div className="terminal-placeholder" data-testid="terminal-placeholder">
-        <p>Terminal will appear here after connecting</p>
-      </div>
+      {errorMessage && (
+        <div
+          className="error-message"
+          data-testid="error-message"
+          role="alert"
+        >
+          {errorMessage}
+        </div>
+      )}
     </div>
   );
 }
