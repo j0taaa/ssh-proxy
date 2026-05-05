@@ -1,11 +1,11 @@
-2026-05-05T21:54:56.155Z mock SSH listening on host port 45715
-2026-05-05T21:54:56.156Z $ npx playwright install chromium
-2026-05-05T21:54:56.837Z exit 0: npx playwright install chromium
+2026-05-05T22:09:47.387Z mock SSH listening on host port 32895
+2026-05-05T22:09:47.388Z $ npx playwright install chromium
+2026-05-05T22:09:47.898Z exit 0: npx playwright install chromium
 BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
 BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
 BEWARE: your OS is not officially supported by Playwright; downloading fallback build for ubuntu24.04-x64.
-2026-05-05T21:54:56.837Z $ docker compose -p ssh-proxy-smoke build
-2026-05-05T21:55:22.992Z exit 0: docker compose -p ssh-proxy-smoke build
+2026-05-05T22:09:47.898Z $ docker compose -p ssh-proxy-smoke build
+2026-05-05T22:09:49.184Z exit 0: docker compose -p ssh-proxy-smoke build
 #0 building with "default" instance using docker driver
 
 #1 [gateway internal] load build definition from Dockerfile
@@ -19,79 +19,59 @@ BEWARE: your OS is not officially supported by Playwright; downloading fallback 
 #3 transferring context: 228B done
 #3 DONE 0.0s
 
-#4 [gateway runtime 1/8] FROM docker.io/library/node:22-bookworm-slim@sha256:d415caac2f1f77b98caaf9415c5f807e14bc8d7bdea62561ea2fef4fbd08a73c
+#4 [gateway build  1/12] FROM docker.io/library/node:22-bookworm-slim@sha256:d415caac2f1f77b98caaf9415c5f807e14bc8d7bdea62561ea2fef4fbd08a73c
 #4 DONE 0.0s
 
 #5 [gateway internal] load build context
-#5 transferring context: 77.38kB done
+#5 transferring context: 232.33kB done
 #5 DONE 0.0s
 
-#6 [gateway runtime 2/8] WORKDIR /app
+#6 [gateway build  3/12] COPY package.json package-lock.json ./
 #6 CACHED
 
-#7 [gateway build  6/12] COPY packages/protocol/package.json packages/protocol/package.json
+#7 [gateway runtime 7/8] COPY --from=build /app/packages/protocol/package.json packages/protocol/package.json
 #7 CACHED
 
-#8 [gateway build  8/12] COPY tsconfig.base.json ./
+#8 [gateway runtime 6/8] COPY --from=build /app/apps/gateway/dist apps/gateway/dist
 #8 CACHED
 
-#9 [gateway build  5/12] COPY apps/web/package.json apps/web/package.json
+#9 [gateway build  6/12] COPY packages/protocol/package.json packages/protocol/package.json
 #9 CACHED
 
-#10 [gateway build  7/12] RUN npm ci
+#10 [gateway build  5/12] COPY apps/web/package.json apps/web/package.json
 #10 CACHED
 
-#11 [gateway build  3/12] COPY package.json package-lock.json ./
+#11 [gateway build  4/12] COPY apps/gateway/package.json apps/gateway/package.json
 #11 CACHED
 
-#12 [gateway build  4/12] COPY apps/gateway/package.json apps/gateway/package.json
+#12 [gateway runtime 5/8] COPY --from=build /app/apps/gateway/package.json apps/gateway/package.json
 #12 CACHED
 
-#13 [gateway build  9/12] COPY apps/gateway apps/gateway
+#13 [gateway runtime 3/8] COPY --from=build /app/package.json /app/package-lock.json ./
 #13 CACHED
 
-#14 [gateway build 10/12] COPY packages/protocol packages/protocol
-#14 DONE 0.1s
+#14 [gateway build 11/12] RUN npm run build --workspace packages/protocol && npm run build --workspace apps/gateway
+#14 CACHED
 
-#15 [gateway build 11/12] RUN npm run build --workspace packages/protocol && npm run build --workspace apps/gateway
-#15 0.360 
-#15 0.360 > @ssh-proxy/protocol@0.0.0 build
-#15 0.360 > tsc -p tsconfig.build.json
-#15 0.360 
-#15 1.934 
-#15 1.934 > @ssh-proxy/gateway@0.0.0 build
-#15 1.934 > tsc -p tsconfig.build.json
-#15 1.934 
-#15 DONE 3.5s
+#15 [gateway build  7/12] RUN npm ci
+#15 CACHED
 
-#16 [gateway build 12/12] RUN npm prune --omit=dev
-#16 1.870 
-#16 1.870 up to date, audited 47 packages in 2s
-#16 1.870 
-#16 1.870 8 packages are looking for funding
-#16 1.870   run `npm fund` for details
-#16 1.899 
-#16 1.899 2 moderate severity vulnerabilities
-#16 1.899 
-#16 1.899 To address all issues (including breaking changes), run:
-#16 1.899   npm audit fix --force
-#16 1.899 
-#16 1.899 Run `npm audit` for details.
-#16 DONE 2.0s
+#16 [gateway build  2/12] WORKDIR /app
+#16 CACHED
 
-#17 [gateway runtime 5/8] COPY --from=build /app/apps/gateway/package.json apps/gateway/package.json
+#17 [gateway build  9/12] COPY apps/gateway apps/gateway
 #17 CACHED
 
-#18 [gateway runtime 4/8] COPY --from=build /app/node_modules ./node_modules
+#18 [gateway build 12/12] RUN npm prune --omit=dev
 #18 CACHED
 
-#19 [gateway runtime 7/8] COPY --from=build /app/packages/protocol/package.json packages/protocol/package.json
+#19 [gateway build  8/12] COPY tsconfig.base.json ./
 #19 CACHED
 
-#20 [gateway runtime 3/8] COPY --from=build /app/package.json /app/package-lock.json ./
+#20 [gateway runtime 4/8] COPY --from=build /app/node_modules ./node_modules
 #20 CACHED
 
-#21 [gateway runtime 6/8] COPY --from=build /app/apps/gateway/dist apps/gateway/dist
+#21 [gateway build 10/12] COPY packages/protocol packages/protocol
 #21 CACHED
 
 #22 [gateway runtime 8/8] COPY --from=build /app/packages/protocol/dist packages/protocol/dist
@@ -118,111 +98,67 @@ BEWARE: your OS is not officially supported by Playwright; downloading fallback 
 #4 DONE 0.0s
 
 #26 [web internal] load build context
-#26 transferring context: 150.71kB done
+#26 transferring context: 150.65kB done
 #26 DONE 0.0s
 
-#6 [web build  2/12] WORKDIR /app
-#6 CACHED
-
-#27 [web build  5/12] COPY apps/gateway/package.json apps/gateway/package.json
+#27 [web build  6/12] COPY packages/protocol/package.json packages/protocol/package.json
 #27 CACHED
 
-#28 [web build  3/12] COPY package.json package-lock.json ./
+#28 [web runtime 7/8] COPY --from=build /app/packages/protocol/package.json packages/protocol/package.json
 #28 CACHED
 
-#29 [web build  7/12] RUN npm ci
+#29 [web build 10/12] COPY packages/protocol packages/protocol
 #29 CACHED
 
-#30 [web build  6/12] COPY packages/protocol/package.json packages/protocol/package.json
+#30 [web build  5/12] COPY apps/gateway/package.json apps/gateway/package.json
 #30 CACHED
 
-#31 [web build  4/12] COPY apps/web/package.json apps/web/package.json
+#31 [web build  8/12] COPY tsconfig.base.json ./
 #31 CACHED
 
-#32 [web build  8/12] COPY tsconfig.base.json ./
+#32 [web runtime 5/8] COPY --from=build /app/apps/web/package.json apps/web/package.json
 #32 CACHED
 
-#33 [web build  9/12] COPY apps/web apps/web
-#33 DONE 0.1s
+#33 [web build  7/12] RUN npm ci
+#33 CACHED
 
-#34 [web build 10/12] COPY packages/protocol packages/protocol
-#34 DONE 0.1s
+#34 [web runtime 3/8] COPY --from=build /app/package.json /app/package-lock.json ./
+#34 CACHED
 
-#35 [web build 11/12] RUN npm run build --workspace packages/protocol && npm run build --workspace apps/web
-#35 0.287 
-#35 0.287 > @ssh-proxy/protocol@0.0.0 build
-#35 0.287 > tsc -p tsconfig.build.json
-#35 0.287 
-#35 1.874 
-#35 1.874 > @ssh-proxy/web@0.0.0 build
-#35 1.874 > next build
-#35 1.874 
-#35 2.290 ▲ Next.js 16.2.4 (Turbopack)
-#35 2.290 
-#35 2.313   Creating an optimized production build ...
-#35 6.622 ✓ Compiled successfully in 4.1s
-#35 6.624   Running TypeScript ...
-#35 9.395   Finished TypeScript in 2.8s ...
-#35 9.398   Collecting page data using 1 worker ...
-#35 9.747   Generating static pages using 1 worker (0/6) ...
-#35 9.792   Generating static pages using 1 worker (1/6) 
-#35 9.921   Generating static pages using 1 worker (2/6) 
-#35 9.934   Generating static pages using 1 worker (4/6) 
-#35 9.939 ✓ Generating static pages using 1 worker (6/6) in 191ms
-#35 9.943   Finalizing page optimization ...
-#35 9.950 
-#35 9.950 Route (app)
-#35 9.950 ┌ ○ /
-#35 9.950 ├ ○ /_not-found
-#35 9.950 ├ ƒ /healthz
-#35 9.950 └ ○ /terminal-test
-#35 9.950 
-#35 9.950 
-#35 9.950 ○  (Static)   prerendered as static content
-#35 9.950 ƒ  (Dynamic)  server-rendered on demand
-#35 9.950 
-#35 DONE 10.0s
+#35 [web runtime 6/8] COPY --from=build /app/apps/web/.next apps/web/.next
+#35 CACHED
 
-#36 [web build 12/12] RUN npm prune --omit=dev
-#36 1.594 
-#36 1.594 up to date, audited 47 packages in 1s
-#36 1.594 
-#36 1.594 8 packages are looking for funding
-#36 1.594   run `npm fund` for details
-#36 1.628 
-#36 1.628 2 moderate severity vulnerabilities
-#36 1.628 
-#36 1.628 To address all issues (including breaking changes), run:
-#36 1.628   npm audit fix --force
-#36 1.628 
-#36 1.628 Run `npm audit` for details.
-#36 DONE 1.7s
+#36 [web runtime 4/8] COPY --from=build /app/node_modules ./node_modules
+#36 CACHED
 
-#37 [web runtime 3/8] COPY --from=build /app/package.json /app/package-lock.json ./
+#37 [web build  4/12] COPY apps/web/package.json apps/web/package.json
 #37 CACHED
 
-#38 [web runtime 4/8] COPY --from=build /app/node_modules ./node_modules
+#16 [web build  2/12] WORKDIR /app
+#16 CACHED
+
+#38 [web build  9/12] COPY apps/web apps/web
 #38 CACHED
 
-#39 [web runtime 5/8] COPY --from=build /app/apps/web/package.json apps/web/package.json
+#39 [web build  3/12] COPY package.json package-lock.json ./
 #39 CACHED
 
-#40 [web runtime 6/8] COPY --from=build /app/apps/web/.next apps/web/.next
-#40 DONE 0.1s
+#40 [web build 11/12] RUN npm run build --workspace packages/protocol && npm run build --workspace apps/web
+#40 CACHED
 
-#41 [web runtime 7/8] COPY --from=build /app/packages/protocol/package.json packages/protocol/package.json
-#41 DONE 0.1s
+#41 [web build 12/12] RUN npm prune --omit=dev
+#41 CACHED
 
 #42 [web runtime 8/8] COPY --from=build /app/packages/protocol/dist packages/protocol/dist
-#42 DONE 0.0s
+#42 CACHED
 
 #43 [web] exporting to image
-#43 exporting layers 0.1s done
-#43 writing image sha256:0ff893c4f7e89c38e53a2ae5d7bac076997433eebcab84289fcd75252fcf261c done
+#43 exporting layers done
+#43 writing image sha256:195fa8ebf832dbf4ac825a4f1a51c981fdc0ab88f9cc8ad20df7c39b5d16f8d7 done
 #43 naming to docker.io/library/ssh-proxy-smoke-web done
-#43 DONE 0.1s
-2026-05-05T21:55:22.992Z $ docker compose -p ssh-proxy-smoke up -d
-2026-05-05T21:55:29.176Z exit 0: docker compose -p ssh-proxy-smoke up -d
+#43 DONE 0.0s
+2026-05-05T22:09:49.184Z $ docker compose -p ssh-proxy-smoke up -d
+2026-05-05T22:09:55.369Z exit 0: docker compose -p ssh-proxy-smoke up -d
 Network ssh-proxy-smoke_default  Creating
  Network ssh-proxy-smoke_default  Created
  Container ssh-proxy-smoke-gateway-1  Creating
@@ -235,18 +171,18 @@ Network ssh-proxy-smoke_default  Creating
  Container ssh-proxy-smoke-gateway-1  Healthy
  Container ssh-proxy-smoke-web-1  Starting
  Container ssh-proxy-smoke-web-1  Started
-2026-05-05T21:55:29.205Z gateway healthy: http://127.0.0.1:3001/healthz
-2026-05-05T21:55:30.247Z web healthy: http://127.0.0.1:3000/healthz
-2026-05-05T21:55:30.247Z $ docker compose -p ssh-proxy-smoke ps
-2026-05-05T21:55:30.334Z exit 0: docker compose -p ssh-proxy-smoke ps
+2026-05-05T22:09:55.408Z gateway healthy: http://127.0.0.1:3001/healthz
+2026-05-05T22:09:56.444Z web healthy: http://127.0.0.1:3000/healthz
+2026-05-05T22:09:56.444Z $ docker compose -p ssh-proxy-smoke ps
+2026-05-05T22:09:56.511Z exit 0: docker compose -p ssh-proxy-smoke ps
 NAME                        IMAGE                     COMMAND                  SERVICE   CREATED         STATUS                           PORTS
 ssh-proxy-smoke-gateway-1   ssh-proxy-smoke-gateway   "docker-entrypoint.s…"   gateway   7 seconds ago   Up 6 seconds (healthy)           127.0.0.1:3001->3001/tcp
 ssh-proxy-smoke-web-1       ssh-proxy-smoke-web       "docker-entrypoint.s…"   web       7 seconds ago   Up 1 second (health: starting)   127.0.0.1:3000->3000/tcp
-2026-05-05T21:55:31.829Z browser smoke passed for WSS
-2026-05-05T21:55:33.386Z browser smoke passed for HTTP fallback
-2026-05-05T21:55:33.419Z mock SSH observed input markers: true
-2026-05-05T21:55:33.419Z $ docker compose -p ssh-proxy-smoke down --remove-orphans
-2026-05-05T21:55:34.850Z exit 0: docker compose -p ssh-proxy-smoke down --remove-orphans
+2026-05-05T22:09:57.969Z browser smoke passed for WSS
+2026-05-05T22:09:59.502Z browser smoke passed for HTTP fallback
+2026-05-05T22:09:59.533Z mock SSH observed input markers: true
+2026-05-05T22:09:59.533Z $ docker compose -p ssh-proxy-smoke down --remove-orphans
+2026-05-05T22:10:00.968Z exit 0: docker compose -p ssh-proxy-smoke down --remove-orphans
 Container ssh-proxy-smoke-web-1  Stopping
  Container ssh-proxy-smoke-web-1  Stopped
  Container ssh-proxy-smoke-web-1  Removing
@@ -257,6 +193,6 @@ Container ssh-proxy-smoke-web-1  Stopping
  Container ssh-proxy-smoke-gateway-1  Removed
  Network ssh-proxy-smoke_default  Removing
  Network ssh-proxy-smoke_default  Removed
-2026-05-05T21:55:34.851Z mock SSH server stopped
-2026-05-05T21:55:34.851Z teardown result: ok
-2026-05-05T21:55:34.851Z docker smoke result: PASS
+2026-05-05T22:10:00.969Z mock SSH server stopped
+2026-05-05T22:10:00.969Z teardown result: ok
+2026-05-05T22:10:00.969Z docker smoke result: PASS
