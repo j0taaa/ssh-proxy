@@ -528,7 +528,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `test(gateway): add mocked ssh integration coverage` | Files: `apps/gateway/**`, `packages/protocol/**`, test files
 
-- [ ] 10. Add Playwright End-to-End Browser QA
+- [x] 10. Add Playwright End-to-End Browser QA
 
   **What to do**: Add Playwright tests that start web, gateway, and mock SSH server. Verify happy path over WSS, forced SSE+POST fallback, automatic WSS failure fallback, localStorage remembered password, invalid form validation, bad SSH credentials, terminal resize, Unicode output, multiline paste, and explicit disconnect cleanup. Use stable selectors/data attributes.
   **Must NOT do**: Do not require a real SSH server, real credentials, external network, or manual browser actions.
