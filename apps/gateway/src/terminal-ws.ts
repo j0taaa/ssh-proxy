@@ -5,7 +5,6 @@ import { WebSocket, WebSocketServer, type RawData } from "ws";
 import {
   HEARTBEAT_INTERVAL_MS,
   ProtocolErrorCode,
-  encodeBase64,
   validateTerminalFrame,
   type CloseFrame,
   type ConnectAckFrame,
@@ -19,6 +18,7 @@ import {
 } from "@ssh-proxy/protocol";
 import { GatewayProtocolError, messageForCode, toSanitizedError, type SanitizedGatewayError } from "./errors.js";
 import type { GatewayLogger } from "./logger.js";
+import { encodeOutputFrameChunks } from "./output-frame-chunks.js";
 import type { SessionManager } from "./session-manager.js";
 
 const TERMINAL_WS_PATH = "/ws/terminal";
@@ -157,7 +157,9 @@ class TerminalWebSocketConnection {
     this.sessionId = frame.sessionId;
     this.unsubscribers.push(
       session.onOutput((chunk) => {
-        this.sendFrame({ type: "output", sessionId: frame.sessionId, seq: this.nextSeq(), dataBase64: encodeBase64(chunk.toString("utf8")) });
+        for (const dataBase64 of encodeOutputFrameChunks(chunk)) {
+          this.sendFrame({ type: "output", sessionId: frame.sessionId, seq: this.nextSeq(), dataBase64 });
+        }
       }),
       session.onError((error) => this.sendError(error)),
       session.onClose((reason) => {

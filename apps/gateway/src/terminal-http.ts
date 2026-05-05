@@ -4,7 +4,6 @@ import {
   HEARTBEAT_INTERVAL_MS,
   MAX_POST_BODY_BYTES,
   ProtocolErrorCode,
-  encodeBase64,
   validateTerminalFrame,
   type CloseFrame,
   type ConnectFrame,
@@ -16,6 +15,7 @@ import {
 } from "@ssh-proxy/protocol";
 import { GatewayProtocolError, messageForCode, toSanitizedError, type SanitizedGatewayError } from "./errors.js";
 import type { GatewayLogger } from "./logger.js";
+import { encodeOutputFrameChunks } from "./output-frame-chunks.js";
 import type { SessionManager } from "./session-manager.js";
 
 type ClientPostFrame = InputFrame | ResizeFrame | CloseFrame;
@@ -112,7 +112,9 @@ export class TerminalHttpFallbackTransport {
       }
     }, this.heartbeatIntervalMs);
     const unsubscribeOutput = session.onOutput((chunk) => {
-      sendFrame("output", { type: "output", sessionId, seq: nextSeq(), dataBase64: encodeBase64(chunk.toString("utf8")) });
+      for (const dataBase64 of encodeOutputFrameChunks(chunk)) {
+        sendFrame("output", { type: "output", sessionId, seq: nextSeq(), dataBase64 });
+      }
     });
     const unsubscribeError = session.onError((error) => {
       sendFrame("error", { type: "error", sessionId, seq: nextSeq(), code: error.code, message: messageForCode(error.code) });
