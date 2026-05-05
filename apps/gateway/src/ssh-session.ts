@@ -24,6 +24,7 @@ export type SshSessionState = "connecting" | "open" | "closed";
 export interface SshSessionOptions {
   idleTimeoutMs?: number;
   maxDurationMs?: number;
+  readyTimeoutMs?: number;
 }
 
 export class SshSession {
@@ -42,6 +43,7 @@ export class SshSession {
   private closeReason = "closed";
   private readonly idleTimeoutMs: number;
   private readonly maxDurationMs: number;
+  private readonly readyTimeoutMs: number;
 
   constructor(frame: ConnectFrame, logger: GatewayLogger, options: SshSessionOptions = {}) {
     this.sessionId = frame.sessionId;
@@ -53,6 +55,7 @@ export class SshSession {
     this.events.on("error", () => undefined);
     this.idleTimeoutMs = options.idleTimeoutMs ?? IDLE_TIMEOUT_MS;
     this.maxDurationMs = options.maxDurationMs ?? MAX_SESSION_DURATION_MS;
+    this.readyTimeoutMs = options.readyTimeoutMs ?? SSH_CONNECT_TIMEOUT_MS;
   }
 
   onOutput(listener: (chunk: Buffer) => void): () => void {
@@ -170,7 +173,7 @@ export class SshSession {
         port: frame.port,
         username: frame.username,
         password: frame.password,
-        readyTimeout: SSH_CONNECT_TIMEOUT_MS,
+        readyTimeout: this.readyTimeoutMs,
         keepaliveInterval: HEARTBEAT_INTERVAL_MS,
         keepaliveCountMax: 3
       });
