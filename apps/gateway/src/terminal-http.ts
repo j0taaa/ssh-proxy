@@ -19,6 +19,12 @@ import type { GatewayLogger } from "./logger.js";
 import type { SessionManager } from "./session-manager.js";
 
 type ClientPostFrame = InputFrame | ResizeFrame | CloseFrame;
+type CorsHeaders = Record<string, string>;
+
+const ALLOWED_DEV_ORIGINS = new Set([
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
+]);
 
 export interface TerminalHttpOptions {
   heartbeatIntervalMs?: number;
@@ -43,6 +49,9 @@ export class TerminalHttpFallbackTransport {
 
     try {
       switch (route.kind) {
+        case "preflight":
+          writePreflight(response, corsHeadersFor(request));
+          return true;
         case "create":
           await this.createSession(request, response);
           return true;
@@ -54,7 +63,7 @@ export class TerminalHttpFallbackTransport {
           return true;
       }
     } catch (error) {
-      writeError(response, toSanitizedError(error));
+      writeError(response, toSanitizedError(error), undefined, request);
       return true;
     }
   }
@@ -62,13 +71,13 @@ export class TerminalHttpFallbackTransport {
   private async createSession(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const frame = await readJsonFrame<ConnectFrame>(request, "connect");
     const session = await this.sessionManager.createSession(frame);
-    writeJson(response, 201, { sessionId: session.sessionId });
+    writeJson(response, 201, { sessionId: session.sessionId }, corsHeadersFor(request));
   }
 
   private openEventStream(sessionId: string, request: IncomingMessage, response: ServerResponse): void {
     const session = this.sessionManager.getSession(sessionId);
     if (!session || session.getState() === "closed") {
-      writeError(response, { code: ProtocolErrorCode.SessionClosed, message: messageForCode(ProtocolErrorCode.SessionClosed) }, 404);
+      writeError(response, { code: ProtocolErrorCode.SessionClosed, message: messageForCode(ProtocolErrorCode.SessionClosed) }, 404, request);
       return;
     }
 
@@ -89,7 +98,8 @@ export class TerminalHttpFallbackTransport {
     response.writeHead(200, {
       "content-type": "text/event-stream",
       "cache-control": "no-cache",
-      connection: "keep-alive"
+      connection: "keep-alive",
+      ...corsHeadersFor(request)
     });
     response.flushHeaders();
     response.write(": connected\n\n");
@@ -136,15 +146,15 @@ export class TerminalHttpFallbackTransport {
     switch (frame.type) {
       case "input":
         this.sessionManager.writeInput(frame);
-        writeJson(response, 202, { ok: true });
+        writeJson(response, 202, { ok: true }, corsHeadersFor(request));
         return;
       case "resize":
         this.sessionManager.resizeSession(frame);
-        writeJson(response, 202, { ok: true });
+        writeJson(response, 202, { ok: true }, corsHeadersFor(request));
         return;
       case "close":
         this.sessionManager.closeSession(frame.sessionId, frame.reason);
-        writeJson(response, 202, { ok: true });
+        writeJson(response, 202, { ok: true }, corsHeadersFor(request));
         return;
     }
   }
@@ -226,6 +236,7 @@ function isClientPostFrame(frame: TerminalFrame): frame is ClientPostFrame {
 }
 
 function parseHttpFallbackRoute(request: IncomingMessage):
+  | { kind: "preflight" }
   | { kind: "create" }
   | { kind: "events"; sessionId: string }
   | { kind: "input"; sessionId: string }
@@ -234,6 +245,9 @@ function parseHttpFallbackRoute(request: IncomingMessage):
     return undefined;
   }
   const pathname = new URL(request.url, "http://localhost").pathname;
+  if (request.method === "OPTIONS" && pathname === "/sessions") {
+    return { kind: "preflight" };
+  }
   if (request.method === "POST" && pathname === "/sessions") {
     return { kind: "create" };
   }
@@ -246,6 +260,9 @@ function parseHttpFallbackRoute(request: IncomingMessage):
   if (sessionId.length === 0) {
     return undefined;
   }
+  if (request.method === "OPTIONS") {
+    return { kind: "preflight" };
+  }
   if (request.method === "GET" && match[2] === "events") {
     return { kind: "events", sessionId };
   }
@@ -255,16 +272,38 @@ function parseHttpFallbackRoute(request: IncomingMessage):
   return undefined;
 }
 
-function writeJson(response: ServerResponse, statusCode: number, payload: object): void {
-  response.writeHead(statusCode, { "content-type": "application/json" });
+function corsHeadersFor(request: IncomingMessage): CorsHeaders {
+  const origin = request.headers.origin;
+  if (typeof origin !== "string" || !ALLOWED_DEV_ORIGINS.has(origin)) {
+    return {};
+  }
+
+  return {
+    "access-control-allow-origin": origin,
+    vary: "Origin"
+  };
+}
+
+function writePreflight(response: ServerResponse, corsHeaders: CorsHeaders): void {
+  response.writeHead(204, {
+    ...corsHeaders,
+    "access-control-allow-methods": "GET,POST,OPTIONS",
+    "access-control-allow-headers": "content-type",
+    "access-control-max-age": "600"
+  });
+  response.end();
+}
+
+function writeJson(response: ServerResponse, statusCode: number, payload: object, headers: CorsHeaders = {}): void {
+  response.writeHead(statusCode, { "content-type": "application/json", ...headers });
   response.end(JSON.stringify(payload));
 }
 
-function writeError(response: ServerResponse, error: SanitizedGatewayError, overrideStatusCode?: number): void {
+function writeError(response: ServerResponse, error: SanitizedGatewayError, overrideStatusCode?: number, request?: IncomingMessage): void {
   if (response.headersSent) {
     return;
   }
-  writeJson(response, overrideStatusCode ?? statusForError(error.code), { error: error.code, message: messageForCode(error.code) });
+  writeJson(response, overrideStatusCode ?? statusForError(error.code), { error: error.code, message: messageForCode(error.code) }, request ? corsHeadersFor(request) : {});
 }
 
 function statusForError(code: ProtocolErrorCode): number {

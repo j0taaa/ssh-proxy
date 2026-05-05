@@ -78,6 +78,45 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
     expect(sshServer.inputs).toContain("printf http-ok\n");
   });
 
+  it("allows dev browser CORS preflight, POST, and SSE from the web origin", async () => {
+    const sshServer = await startMockSshServer();
+    const gateway = await startGateway();
+    cleanupTasks.push(gateway.close, sshServer.close);
+
+    const origin = "http://127.0.0.1:3000";
+    const sessionId = "http-cors";
+    const preflightResponse = await fetch(`${gateway.url}/sessions`, {
+      method: "OPTIONS",
+      headers: {
+        origin,
+        "access-control-request-method": "POST",
+        "access-control-request-headers": "content-type"
+      }
+    });
+    expect(preflightResponse.status).toBe(204);
+    expect(preflightResponse.headers.get("access-control-allow-origin")).toBe(origin);
+    expect(preflightResponse.headers.get("access-control-allow-methods")).toContain("POST");
+    expect(preflightResponse.headers.get("access-control-allow-headers")).toContain("content-type");
+
+    const createResponse = await postJson(`${gateway.url}/sessions`, connectFrame(sessionId, sshServer.port), { origin });
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.headers.get("access-control-allow-origin")).toBe(origin);
+
+    const sseClient = await SseClient.open(`${gateway.url}/sse/terminal/${sessionId}/events`, { origin });
+    cleanupTasks.unshift(() => sseClient.close());
+    expect(sseClient.allowOrigin).toBe(origin);
+
+    const inputResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, {
+      type: "input",
+      sessionId,
+      seq: 2,
+      dataBase64: encodeBase64("printf http-ok\n")
+    }, { origin });
+    expect(inputResponse.status).toBe(202);
+    expect(inputResponse.headers.get("access-control-allow-origin")).toBe(origin);
+    await expect(waitForOutputText(sseClient, "http-ok")).resolves.toContain("http-ok");
+  });
+
   it("delivers POST resize frames to the active SSH PTY", async () => {
     const sshServer = await startMockSshServer();
     const gateway = await startGateway();
@@ -171,8 +210,12 @@ class SseClient {
     this.reader = reader;
   }
 
-  static async open(url: string): Promise<SseClient> {
-    const response = await fetch(url);
+  get allowOrigin(): string | null {
+    return this.response.headers.get("access-control-allow-origin");
+  }
+
+  static async open(url: string, headers?: HeadersInit): Promise<SseClient> {
+    const response = await fetch(url, { headers });
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/event-stream");
     if (!response.body) {
@@ -264,10 +307,10 @@ async function startGateway(): Promise<RunningGateway> {
   };
 }
 
-async function postJson(url: string, body: object): Promise<Response> {
+async function postJson(url: string, body: object, headers: HeadersInit = {}): Promise<Response> {
   return fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...headers },
     body: JSON.stringify(body)
   });
 }
