@@ -1,0 +1,20 @@
+Final-wave output chunking fix verification
+
+Changed behavior:
+- WSS and SSE output paths both use apps/gateway/src/output-frame-chunks.ts.
+- Each emitted output frame is capped at DATA_FRAME_MAX_DECODED_BYTES decoded bytes.
+- Unicode output is split on code point boundaries to avoid corrupting multibyte characters.
+
+Focused tests:
+- npm test --workspace apps/gateway -- --run src/terminal-ws.test.ts src/terminal-http.test.ts
+- Result: 2 files passed, 15 tests passed.
+
+Full verification:
+- npm run typecheck: passed.
+- npm run lint: passed.
+- npm test: passed, 4 files passed, 34 tests passed.
+- npm run test:e2e: passed, 11 Chromium tests passed.
+- npm run docker:smoke: passed, docker smoke result PASS.
+
+Notes:
+- Existing generated evidence screenshots and docker smoke output were refreshed by the verification commands.
