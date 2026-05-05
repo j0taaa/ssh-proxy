@@ -1,0 +1,14 @@
+task-5-sse-post-oversize
+timestamp: 2026-05-05T18:03:00Z
+
+Implemented and verified oversized fallback rejection coverage in apps/gateway/src/terminal-http.test.ts.
+
+Command: npm test --workspace apps/gateway -- --run
+Result: PASS
+Summary: The new oversized POST test creates an SSH session, rejects a decoded input frame of 4097 bytes with HTTP 413 and {"error":"FRAME_TOO_LARGE","message":"Terminal frame is too large."}, rejects a POST body above 8192 bytes with HTTP 413, and asserts the mock SSH server received no input.
+
+Related full verification:
+- npm run typecheck: PASS
+- npm run lint: PASS
+- npm test: PASS, 4 test files passed, 26 tests passed
+- npm run test:e2e: PASS, 1 Chromium test passed

@@ -1,0 +1,15 @@
+task-5-sse-post-roundtrip
+timestamp: 2026-05-05T18:03:00Z
+
+Implemented and verified HTTP fallback roundtrip coverage in apps/gateway/src/terminal-http.test.ts.
+
+Command: npm test --workspace apps/gateway -- --run
+Result: PASS
+Summary: 3 gateway test files passed, 15 tests passed. The new SSE/POST fallback suite creates a session via POST /sessions, opens GET /sse/terminal/:sessionId/events, sends input via POST /sse/terminal/:sessionId/input, receives command output over SSE, delivers resize frames, reconnects SSE to the same active session, and explicit close removes the SessionManager entry.
+
+Manual smoke command: npx tsx --eval '<gateway health/404/invalid-session smoke>'
+Result: PASS
+Observed:
+- health 200 {"ok":true}
+- missing 404 {"error":"NOT_FOUND","message":"Gateway route not found."}
+- invalid-session 400 {"error":"VALIDATION_ERROR","message":"Invalid terminal frame."}
