@@ -1,18 +1,24 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { GatewayLogger } from "./logger.js";
 import { SessionManager, type SessionManagerOptions } from "./session-manager.js";
+import { attachTerminalWebSocketTransport, type TerminalWebSocketOptions } from "./terminal-ws.js";
 
 export interface GatewayServerOptions {
   host?: string;
   port?: number;
   logger: GatewayLogger;
   sessionOptions?: SessionManagerOptions;
+  webSocketOptions?: TerminalWebSocketOptions;
 }
 
 export function createGatewayServer(options: GatewayServerOptions) {
   const sessionManager = new SessionManager(options.logger, options.sessionOptions);
   const server = createServer((request, response) => handleRequest(request, response));
-  server.once("close", () => sessionManager.closeAll("server_close"));
+  const webSocketTransport = attachTerminalWebSocketTransport(server, sessionManager, options.logger, options.webSocketOptions);
+  server.once("close", () => {
+    webSocketTransport.close();
+    sessionManager.closeAll("server_close");
+  });
   return { server, sessionManager };
 }
 

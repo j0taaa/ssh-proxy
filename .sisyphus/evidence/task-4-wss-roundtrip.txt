@@ -1,0 +1,13 @@
+Task: task-4-wss-terminal-transport
+Scenario: WSS interactive round trip
+
+Command: npm test --workspace apps/gateway -- --run
+Result: PASS
+Summary: Vitest ran 2 gateway test files with 10 passing tests. The WSS integration test used a real http.Server, ws client, and mock ssh2.Server; it connected to GET /ws/terminal, received connect_ack after shell readiness, sent input frame dataBase64 for "printf wss-ok\n", received output containing "wss-ok", and confirmed the mock SSH server received the input.
+
+Additional verification:
+- npm run typecheck: PASS across apps/web, apps/gateway, and packages/protocol.
+- npm run lint: PASS.
+- npm test: PASS with 3 test files and 21 tests.
+- npm run test:e2e: PASS with 1 Chromium Playwright test; sanitizer ran afterward.
+- Manual health check: npx tsx gateway smoke returned healthz 200 {"ok":true}.

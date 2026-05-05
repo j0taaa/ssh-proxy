@@ -21,3 +21,8 @@
 
 - Port `127.0.0.1:3001` was occupied by a stale `tsx src/index.ts` gateway process during manual dev verification; stopped it, then verified the new gateway `/healthz` and sanitized 404 responses on the default port.
 - The mocked bad-password test initially surfaced Node EventEmitter's special unhandled `error` behavior; the SSH session event bus now installs a no-op internal error listener while still allowing explicit `onError` subscribers.
+
+## 2026-05-06T01:50:00Z - task-4-wss-terminal-transport
+
+- `ws` delivers text frames as raw Buffer data with `isBinary === false`, so WSS validation must reject binary by the flag and then decode non-binary `RawData` to UTF-8 text before JSON parsing.
+- Server shutdown can hang if active WebSocket clients remain open while `server.close()` waits for connections; WSS tests close clients before closing the gateway server.

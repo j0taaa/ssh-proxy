@@ -29,3 +29,9 @@
 - `ssh2.Client` shell resize works through `ClientChannel.setWindow(rows, cols, 0, 0)`, while the mocked `ssh2.Server` emits resize info asynchronously, so tests wait for the resize observation after issuing it.
 - Gateway-local tests again need `apps/gateway/vitest.config.ts` so `npm test --workspace apps/gateway -- --run` discovers `src/session-manager.test.ts`.
 - Completion notification to `ntfy.sh/codex_jaypussy` succeeded with message id `Qx0633fxeVmP`.
+
+## 2026-05-06T01:50:00Z - task-4-wss-terminal-transport
+
+- Gateway WebSocket upgrades are now attached directly to the existing Node `http.Server` with `ws` `WebSocketServer({ noServer: true })`; unknown upgrade paths receive a clear 404 response before socket destroy.
+- The WSS transport keeps protocol heartbeat frames and WebSocket control pings together: active clients answer control pings automatically through `ws`, and protocol `ping` frames are emitted on the same interval for frontend-visible liveness.
+- WSS tests can run quickly by injecting `webSocketOptions.heartbeatIntervalMs` into `createGatewayServer` while production defaults still use the protocol `HEARTBEAT_INTERVAL_MS` value.

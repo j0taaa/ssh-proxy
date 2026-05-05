@@ -290,7 +290,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `feat(gateway): add password SSH session core` | Files: `apps/gateway/**`
 
-- [ ] 4. Implement WSS Terminal Transport
+- [x] 4. Implement WSS Terminal Transport
 
   **What to do**: Add WebSocket endpoint `GET /ws/terminal` to the gateway using Node runtime. Authenticate nothing by design. Accept validated frames only. On `connect`, create SSH session; on `input`, write decoded bytes to SSH channel; on `resize`, resize PTY; on SSH data, emit `output`; send `ping`/`pong` heartbeats every `25s`; close and cleanup on errors. Return `connect_ack` only after SSH shell is ready.
   **Must NOT do**: Do not implement fallback logic in this task beyond shared transport interface hooks; do not use Next.js App Router WebSocket upgrades.

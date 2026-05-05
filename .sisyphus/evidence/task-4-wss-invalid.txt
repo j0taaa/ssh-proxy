@@ -1,0 +1,10 @@
+Task: task-4-wss-terminal-transport
+Scenario: Invalid WSS frame is rejected
+
+Command: npm test --workspace apps/gateway -- --run
+Result: PASS
+Summary: Vitest ran 2 gateway test files with 10 passing tests. The invalid-frame WSS integration test used a real http.Server and ws client, sent {"type":"input","sessionId":"bad-frame","seq":1,"dataBase64":"not-base64***"}, and received a sanitized error frame with code VALIDATION_ERROR and message "Invalid terminal frame." without crashing the gateway.
+
+Safety checks:
+- Binary messages and malformed JSON are handled through the same sanitized validation-error path in the transport.
+- Changed gateway files were searched for TODO, FIXME, HACK, @ts-ignore, as any, password logging, SFTP, port forwarding, and terminal recording markers; only legitimate SSH password field usage and mock-test credentials were present.
