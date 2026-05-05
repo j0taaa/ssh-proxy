@@ -16,3 +16,8 @@
 ## 2026-05-06T01:20:04Z - task-2-protocol
 
 - `apps/web/app/page.tsx` still imports `scaffoldStatus`; the protocol package keeps a non-placeholder compatibility export so root typecheck remains green without touching web UI in this task.
+
+## 2026-05-06T01:34:30Z - task-3-gateway
+
+- Port `127.0.0.1:3001` was occupied by a stale `tsx src/index.ts` gateway process during manual dev verification; stopped it, then verified the new gateway `/healthz` and sanitized 404 responses on the default port.
+- The mocked bad-password test initially surfaced Node EventEmitter's special unhandled `error` behavior; the SSH session event bus now installs a no-op internal error listener while still allowing explicit `onError` subscribers.

@@ -22,3 +22,10 @@
 
 - `packages/protocol` now owns the shared terminal frame contract with constants, TypeScript frame types, base64 helpers, and runtime validation for all planned frame types.
 - The root Vitest include works from the repo root, but workspace-local protocol tests need a package-local `vitest.config.ts` so `npm test --workspace packages/protocol -- --run` discovers `src/index.test.ts`.
+
+## 2026-05-06T01:34:30Z - task-3-gateway
+
+- Gateway session core now keeps all SSH sessions in process memory through `SessionManager`; no websocket or HTTP session transport was added in this task.
+- `ssh2.Client` shell resize works through `ClientChannel.setWindow(rows, cols, 0, 0)`, while the mocked `ssh2.Server` emits resize info asynchronously, so tests wait for the resize observation after issuing it.
+- Gateway-local tests again need `apps/gateway/vitest.config.ts` so `npm test --workspace apps/gateway -- --run` discovers `src/session-manager.test.ts`.
+- Completion notification to `ntfy.sh/codex_jaypussy` succeeded with message id `Qx0633fxeVmP`.

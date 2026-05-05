@@ -1,0 +1,14 @@
+2026-05-06T01:34:30Z - task-3-gateway-happy
+
+Implemented gateway SSH session core and verified the mocked SSH happy path.
+
+Commands and results:
+- `npm test --workspace apps/gateway -- --run`: passed, 1 file, 6 tests. Covers password SSH auth for `testuser`/`testpass`, PTY shell allocation, input delivery, output containing `ok`, resize event `{ cols: 100, rows: 40 }`, explicit close, SSH channel-close cleanup, idle-timeout cleanup, and validation failure paths.
+- `npm test`: passed, 2 files, 17 tests.
+- `npm run dev:gateway` on default `127.0.0.1:3001`: started after stopping a stale prior gateway dev process that held port 3001.
+- `GET /healthz`: returned status 200 and body `{"ok":true}`.
+- `GET /missing`: returned status 404 and sanitized body `{"error":"NOT_FOUND","message":"Gateway route not found."}`.
+
+Notes:
+- The mocked SSH server uses `ssh2.Server` with an ephemeral localhost port and accepts only `testuser`/`testpass`.
+- The session core uses `ssh2.Client` password auth, PTY `shell`, keepalive settings, and `setWindow(rows, cols, 0, 0)` for resize.

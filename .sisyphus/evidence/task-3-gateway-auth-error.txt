@@ -1,0 +1,17 @@
+2026-05-06T01:34:30Z - task-3-gateway-auth-error
+
+Verified bad credential handling and log redaction.
+
+Commands and results:
+- `npm test --workspace apps/gateway -- --run`: passed, 1 file, 6 tests.
+- Bad password scenario calls `SessionManager.createSession` with password `wrongpass` against the mocked SSH server and receives sanitized code `SSH_AUTH_FAILED`.
+- The in-memory test logger output was asserted not to contain `wrongpass` or `testpass`.
+- Policy grep over changed gateway TypeScript files, gateway package metadata, and `package-lock.json` found no placeholder comments, TypeScript suppression comments, unsafe casts, or forbidden transport/file-transfer/recording features. Password matches were limited to the required SSH connect field, the redaction helper, and mocked auth test fixtures; no log statement includes a password.
+
+Sanitized mapping confirmed:
+- Authentication failures map to `SSH_AUTH_FAILED`.
+- Timeouts map to `SSH_TIMEOUT`.
+- Connection failures map to `SSH_CONNECT_FAILED`.
+- Validation failures map to `VALIDATION_ERROR`.
+- Closed sessions map to `SESSION_CLOSED`.
+- Non-Error unknown failures map to `INTERNAL_ERROR`.

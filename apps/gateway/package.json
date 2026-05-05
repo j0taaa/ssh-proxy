@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@ssh-proxy/protocol": "0.0.0"
+    "@ssh-proxy/protocol": "0.0.0",
+    "ssh2": "^1.17.0"
   },
   "devDependencies": {
+    "@types/ssh2": "^1.15.5",
     "tsx": "^4.20.6"
   }
 }

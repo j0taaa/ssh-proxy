@@ -249,7 +249,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `feat(protocol): define terminal frame contract` | Files: `packages/protocol/**`
 
-- [ ] 3. Build Node SSH Gateway Session Core
+- [x] 3. Build Node SSH Gateway Session Core
 
   **What to do**: In `apps/gateway`, implement an HTTP server process with `/healthz`, session manager, `ssh2.Client` password auth, PTY shell creation, keepalive settings, timeout cleanup, redacted logging, and sanitized errors. SSH sessions are created from validated `connect` frames. Allocate PTY using initial `cols`/`rows`; resize active channel on `resize`. Keep password only in memory during active connection and delete session state on close. Auto-accept host keys and log a startup warning that this is insecure.
   **Must NOT do**: Do not add app auth, host allowlists, SSH key auth, file transfer, port forwarding, terminal recording, or database/session persistence.
