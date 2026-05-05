@@ -1,0 +1,12 @@
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+apps/web/.next
+apps/gateway/dist
+packages/protocol/dist
+.git
+.sisyphus/evidence
+.test-state
+playwright-report
+test-results
+*.log

@@ -6,7 +6,9 @@ export default tseslint.config(
   {
     ignores: [
       "apps/web/.next/**",
+      "apps/**/dist/**",
       "node_modules/**",
+      "packages/**/dist/**",
       "package-lock.json",
       "test-results/**",
       "playwright-report/**"
