@@ -11,11 +11,12 @@
     "dev": "concurrently -k -n web,gateway \"npm run dev:web\" \"npm run dev:gateway\"",
     "dev:web": "npm run dev --workspace apps/web",
     "dev:gateway": "npm run dev --workspace apps/gateway",
+    "build": "npm run build --workspace packages/protocol && npm run build --workspace apps/gateway && npm run build --workspace apps/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "npm run build --workspace packages/protocol && vitest run",
     "test:e2e": "playwright install chromium && playwright test && node scripts/sanitize-next-env.mjs",
-    "docker:smoke": "node scripts/docker-smoke-placeholder.mjs"
+    "docker:smoke": "node scripts/docker-smoke.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
