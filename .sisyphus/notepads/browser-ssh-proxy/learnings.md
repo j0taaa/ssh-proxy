@@ -51,3 +51,13 @@
 - localStorage values load in useEffect after hydration to avoid server/client mismatch; a `hydrated` flag prevents premature cleanup effects.
 - The `scaffoldStatus` import from `@ssh-proxy/protocol` is no longer used in page.tsx; the export remains in the protocol package for backward compatibility.
 - The scaffold E2E test at `tests/e2e/scaffold.spec.ts` was updated from checking "Scaffold ready" to verifying the connection form and warning box.
+
+## 2026-05-06T18:40:00Z - task-7-xterm-terminal
+
+- Terminal component is a `"use client"` forwardRef component at `apps/web/components/terminal.tsx` using `@xterm/xterm` Terminal and `@xterm/addon-fit` FitAddon.
+- xterm CSS imported via `import "@xterm/xterm/css/xterm.css"` at top of the client component file; Next.js App Router handles this correctly without SSR issues.
+- Callback refs (`onInputRef`, `onResizeRef`) assigned synchronously outside effects avoid stale closures without re-attaching xterm event listeners on every callback change.
+- Empty catch blocks require a comment body to satisfy ESLint `no-empty` rule.
+- `FitAddon.fit()` can throw if the container element is not yet visible (zero dimensions); wrapping in try/catch is necessary.
+- The test harness route at `apps/web/app/terminal-test/page.tsx` provides echo-mode verification without any backend transport.
+- Resize events are debounced at 100ms and only emitted when cols/rows change within protocol bounds (20-300 cols, 5-120 rows).

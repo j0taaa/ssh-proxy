@@ -408,7 +408,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `feat(web): add ssh connection form` | Files: `apps/web/**`
 
-- [ ] 7. Build xterm.js Terminal Component
+- [x] 7. Build xterm.js Terminal Component
 
   **What to do**: Add a client-only React component using `@xterm/xterm` and `@xterm/addon-fit`. Initialize `Terminal` in `useEffect`, open on a `ref`, load `FitAddon`, use `ResizeObserver`, debounce fit/resize, emit `onInput` from `terminal.onData`, emit `onResize` when cols/rows change, render output via `terminal.write`, and dispose terminal/addons on unmount. Import xterm CSS in the client-supported location.
   **Must NOT do**: Do not initialize xterm during server render, do not log terminal input/output, do not add terminal recording, file transfer, or clipboard auto-read.

@@ -14,3 +14,7 @@
 ## 2026-05-06T02:26:00Z - task-6-connection-ui
 
 - No unresolved Task 6 blockers remain. Actual transport connection, xterm terminal rendering, Playwright E2E coverage for SSH flows, Docker production files, and README updates remain out of scope for later tasks.
+
+## 2026-05-06T18:40:00Z - task-7-xterm-terminal
+
+- No unresolved Task 7 blockers remain. Transport connection wiring (Task 8), Playwright E2E coverage for SSH flows, Docker production files, and README updates remain out of scope for later tasks.
