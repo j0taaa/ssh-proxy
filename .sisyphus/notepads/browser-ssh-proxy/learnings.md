@@ -41,3 +41,13 @@
 - HTTP fallback now routes through the existing Node `http.Server` request handler with a dedicated transport module; no frontend code or alternate transport stack was added.
 - `POST /sessions` returns only `{ "sessionId": "..." }` after `SessionManager.createSession()` completes shell readiness, while `GET /sse/terminal/:sessionId/events` attaches only to live in-memory session output and does not replay output emitted before SSE subscription.
 - SSE disconnect cleanup removes listeners and heartbeat intervals without closing SSH, so reconnecting to the same active session attaches a fresh stream until idle timeout or explicit close.
+
+## 2026-05-06T02:26:00Z - task-6-connection-ui
+
+- Connection form is a self-contained `"use client"` component at `apps/web/components/connection-form.tsx` managing host, port, username, password, rememberPassword, forceHttp, validation, connection status, and localStorage internally.
+- `globals.css` now has a full CSS custom property design token system (--color-*, --space-*, --radius-*, --font-mono) extending the original dark theme (#101820 bg, #9cc9ff accent, #f7c46c warning).
+- `useId()` provides stable label-input associations for the single-instance form without hardcoded IDs.
+- Port field uses `type="number"` with `step={1}` and manual validation via `Number.isInteger()` to reject decimals and non-numeric input.
+- localStorage values load in useEffect after hydration to avoid server/client mismatch; a `hydrated` flag prevents premature cleanup effects.
+- The `scaffoldStatus` import from `@ssh-proxy/protocol` is no longer used in page.tsx; the export remains in the protocol package for backward compatibility.
+- The scaffold E2E test at `tests/e2e/scaffold.spec.ts` was updated from checking "Scaffold ready" to verifying the connection form and warning box.

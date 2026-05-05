@@ -368,7 +368,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `feat(gateway): add sse post fallback transport` | Files: `apps/gateway/**`, `packages/protocol/**`
 
-- [ ] 6. Build Next.js Connection UI with Unsafe-Mode Warnings
+- [x] 6. Build Next.js Connection UI with Unsafe-Mode Warnings
 
   **What to do**: In `apps/web`, create the main page with host, port, username, password fields, “Remember password on this browser” checkbox, “Force HTTP fallback” checkbox, connect/disconnect controls, connection status, and persistent localStorage profile/password behavior. Save password to `localStorage` only if checkbox is checked. Load remembered values on page load. Show prominent warnings before connect: no app auth, arbitrary targets allowed, localStorage password storage is unsafe, host keys auto-accepted.
   **Must NOT do**: Do not add login/auth to the app, user accounts, encryption passphrase flow, SSH key fields, SFTP/file transfer controls, or host allowlist UI.

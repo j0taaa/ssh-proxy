@@ -10,3 +10,7 @@
 ## 2026-05-05T18:03:00Z - task-5-sse-post-fallback
 
 - No unresolved Task 5 blockers remain. Frontend transport selection, reconnect behavior beyond attaching SSE to the same active in-memory session, persistence, auth hardening, SFTP, port forwarding, and terminal recording remain out of scope for later tasks.
+
+## 2026-05-06T02:26:00Z - task-6-connection-ui
+
+- No unresolved Task 6 blockers remain. Actual transport connection, xterm terminal rendering, Playwright E2E coverage for SSH flows, Docker production files, and README updates remain out of scope for later tasks.
