@@ -1,46 +1,7 @@
-import { once } from "node:events";
-import { type AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
-import { Server, utils, type AuthContext, type Connection, type ServerChannel, type Session, type WindowChangeInfo } from "ssh2";
-import { ProtocolErrorCode, decodeBase64, encodeBase64, type ConnectFrame, type TerminalFrame } from "@ssh-proxy/protocol";
-import { createGatewayServer } from "./server.js";
-import type { GatewayLogFields, GatewayLogger } from "./logger.js";
-
-interface MockSshServer {
-  port: number;
-  inputs: string[];
-  resizes: Array<{ cols: number; rows: number }>;
-  shellReadyCount: number;
-  close(): Promise<void>;
-}
-
-interface RunningGateway {
-  url: string;
-  size(): number;
-  close(): Promise<void>;
-}
-
-interface MemoryLogEntry {
-  level: "info" | "warn" | "error";
-  message: string;
-  fields?: GatewayLogFields;
-}
-
-class MemoryLogger implements GatewayLogger {
-  readonly entries: MemoryLogEntry[] = [];
-
-  info(message: string, fields?: GatewayLogFields): void {
-    this.entries.push({ level: "info", message, fields });
-  }
-
-  warn(message: string, fields?: GatewayLogFields): void {
-    this.entries.push({ level: "warn", message, fields });
-  }
-
-  error(message: string, fields?: GatewayLogFields): void {
-    this.entries.push({ level: "error", message, fields });
-  }
-}
+import { DATA_FRAME_MAX_DECODED_BYTES, MAX_POST_BODY_BYTES, ProtocolErrorCode, decodeBase64, type TerminalFrame } from "@ssh-proxy/protocol";
+import { connectFrame, inputFrame, isTerminalFrame, outputText, resizeFrame, startGateway } from "./test-utils/gateway-test-utils.js";
+import { startMockSshServer } from "./test-utils/mock-ssh-server.js";
 
 const cleanupTasks: Array<() => Promise<void>> = [];
 
@@ -51,7 +12,7 @@ afterEach(async () => {
 });
 
 describe("terminal HTTP SSE/POST fallback transport", () => {
-  it("creates a session, streams output over SSE, and sends input over POST", async () => {
+  it("creates a session, streams output over SSE, and sends command echo over POST", async () => {
     const sshServer = await startMockSshServer();
     const gateway = await startGateway();
     cleanupTasks.push(gateway.close, sshServer.close);
@@ -65,17 +26,12 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
     const sseClient = await SseClient.open(`${gateway.url}/sse/terminal/${sessionId}/events`);
     cleanupTasks.unshift(() => sseClient.close());
 
-    const inputResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, {
-      type: "input",
-      sessionId,
-      seq: 2,
-      dataBase64: encodeBase64("printf http-ok\n")
-    });
+    const inputResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, inputFrame(sessionId, "printf http-ok\n"));
     expect(inputResponse.status).toBe(202);
 
-    const output = await waitForOutputText(sseClient, "http-ok");
-    expect(output).toContain("http-ok");
-    expect(sshServer.inputs).toContain("printf http-ok\n");
+    const output = await waitForOutputText(sseClient, "printf http-ok");
+    expect(output).toContain("printf http-ok");
+    await sshServer.waitForInput("printf http-ok\n");
   });
 
   it("allows dev browser CORS preflight, POST, and SSE from the web origin", async () => {
@@ -106,15 +62,10 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
     cleanupTasks.unshift(() => sseClient.close());
     expect(sseClient.allowOrigin).toBe(origin);
 
-    const inputResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, {
-      type: "input",
-      sessionId,
-      seq: 2,
-      dataBase64: encodeBase64("printf http-ok\n")
-    }, { origin });
+    const inputResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, inputFrame(sessionId, "printf http-ok\n"), { origin });
     expect(inputResponse.status).toBe(202);
     expect(inputResponse.headers.get("access-control-allow-origin")).toBe(origin);
-    await expect(waitForOutputText(sseClient, "http-ok")).resolves.toContain("http-ok");
+    await expect(waitForOutputText(sseClient, "printf http-ok")).resolves.toContain("printf http-ok");
   });
 
   it("delivers POST resize frames to the active SSH PTY", async () => {
@@ -125,15 +76,22 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
     const sessionId = "http-resize";
     await expect(postJson(`${gateway.url}/sessions`, connectFrame(sessionId, sshServer.port))).resolves.toMatchObject({ status: 201 });
 
-    const resizeResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, { type: "resize", sessionId, seq: 2, cols: 132, rows: 43 });
+    const resizeResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, resizeFrame(sessionId, 132, 43));
     expect(resizeResponse.status).toBe(202);
-    await expect(waitForResize(sshServer, 132, 43)).resolves.toBeUndefined();
+    await expect(sshServer.waitForResize(132, 43)).resolves.toBeUndefined();
   });
 
-  it("rejects oversized POST bodies and decoded data frames without writing to SSH", async () => {
+  it("rejects invalid create frames, oversized POST bodies, and oversized decoded data without writing to SSH", async () => {
     const sshServer = await startMockSshServer();
     const gateway = await startGateway();
     cleanupTasks.push(gateway.close, sshServer.close);
+
+    const invalidHost = await postJson(`${gateway.url}/sessions`, connectFrame("http-invalid-host", sshServer.port, { host: "bad host" }));
+    expect(invalidHost.status).toBe(400);
+    expect(await invalidHost.json()).toEqual({ error: ProtocolErrorCode.ValidationError, message: "Invalid terminal frame." });
+
+    const invalidPort = await postJson(`${gateway.url}/sessions`, connectFrame("http-invalid-port", 0));
+    expect(invalidPort.status).toBe(400);
 
     const sessionId = "http-oversize";
     await expect(postJson(`${gateway.url}/sessions`, connectFrame(sessionId, sshServer.port))).resolves.toMatchObject({ status: 201 });
@@ -142,7 +100,7 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
       type: "input",
       sessionId,
       seq: 2,
-      dataBase64: Buffer.alloc(4097, "x").toString("base64")
+      dataBase64: Buffer.alloc(DATA_FRAME_MAX_DECODED_BYTES + 1, "x").toString("base64")
     });
     expect(oversizedDecoded.status).toBe(413);
     expect(await oversizedDecoded.json()).toEqual({ error: ProtocolErrorCode.FrameTooLarge, message: "Terminal frame is too large." });
@@ -150,10 +108,24 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
     const oversizedBody = await fetch(`${gateway.url}/sse/terminal/${sessionId}/input`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ type: "input", sessionId, seq: 3, dataBase64: "" }).padEnd(8193, " ")
+      body: JSON.stringify({ type: "input", sessionId, seq: 3, dataBase64: "" }).padEnd(MAX_POST_BODY_BYTES + 1, " ")
     });
     expect(oversizedBody.status).toBe(413);
     expect(sshServer.inputs).toEqual([]);
+  });
+
+  it("returns sanitized auth errors and keeps passwords out of gateway logs", async () => {
+    const sshServer = await startMockSshServer();
+    const gateway = await startGateway();
+    cleanupTasks.push(gateway.close, sshServer.close);
+
+    const response = await postJson(`${gateway.url}/sessions`, connectFrame("http-bad-auth", sshServer.port, { password: "wrongpass" }));
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: ProtocolErrorCode.SshAuthFailed, message: "SSH authentication failed." });
+    expect(gateway.logger.text()).not.toContain("wrongpass");
+    expect(gateway.logger.text()).not.toContain("testpass");
+    expect(gateway.size()).toBe(0);
   });
 
   it("allows SSE reconnect to the same active in-memory session", async () => {
@@ -170,17 +142,36 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
 
     const secondClient = await SseClient.open(`${gateway.url}/sse/terminal/${sessionId}/events`);
     cleanupTasks.unshift(() => secondClient.close());
-    const inputResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, {
-      type: "input",
-      sessionId,
-      seq: 2,
-      dataBase64: encodeBase64("printf reconnect-ok\n")
-    });
+    const inputResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, inputFrame(sessionId, "printf reconnect-ok\n"));
     expect(inputResponse.status).toBe(202);
 
-    const output = await waitForOutputText(secondClient, "reconnect-ok");
-    expect(output).toContain("reconnect-ok");
+    const output = await waitForOutputText(secondClient, "printf reconnect-ok");
+    expect(output).toContain("printf reconnect-ok");
     expect(gateway.size()).toBe(1);
+  });
+
+  it("streams large output bursts, Unicode, and multiline pasted input over SSE", async () => {
+    const sshServer = await startMockSshServer();
+    const gateway = await startGateway();
+    cleanupTasks.push(gateway.close, sshServer.close);
+    const sessionId = "http-rich-output";
+
+    await expect(postJson(`${gateway.url}/sessions`, connectFrame(sessionId, sshServer.port))).resolves.toMatchObject({ status: 201 });
+    const sseClient = await SseClient.open(`${gateway.url}/sse/terminal/${sessionId}/events`);
+    cleanupTasks.unshift(() => sseClient.close());
+
+    const pastedInput = "printf café-雪\nprintf second-line\n";
+    await expect(postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, inputFrame(sessionId, pastedInput))).resolves.toMatchObject({ status: 202 });
+    const unicodeOutput = await waitForOutputText(sseClient, "second-line");
+    expect(unicodeOutput).toContain("café-雪");
+    expect(unicodeOutput).toContain("second-line");
+
+    await expect(postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, inputFrame(sessionId, "burst\n", 3))).resolves.toMatchObject({ status: 202 });
+    const burstOutput = await waitForOutputText(sseClient, "yyyyyyyyyy");
+    expect(burstOutput).toContain("x".repeat(4000));
+    expect(burstOutput).toContain("y".repeat(1024));
+    await sshServer.waitForInput(pastedInput);
+    await sshServer.waitForInput("burst\n");
   });
 
   it("explicit close POST closes SSH and removes the managed session", async () => {
@@ -195,6 +186,7 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
     const closeResponse = await postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, { type: "close", sessionId, seq: 2, reason: "test_close" });
     expect(closeResponse.status).toBe(202);
     expect(gateway.size()).toBe(0);
+    await expect(sshServer.waitForChannelClose()).resolves.toBeUndefined();
   });
 });
 
@@ -278,35 +270,6 @@ class SseClient {
   }
 }
 
-function connectFrame(sessionId: string, port: number): ConnectFrame {
-  return {
-    type: "connect",
-    sessionId,
-    seq: 1,
-    host: "127.0.0.1",
-    port,
-    username: "testuser",
-    password: "testpass",
-    cols: 80,
-    rows: 24
-  };
-}
-
-async function startGateway(): Promise<RunningGateway> {
-  const logger = new MemoryLogger();
-  const { server, sessionManager } = createGatewayServer({ logger, httpFallbackOptions: { heartbeatIntervalMs: 100 } });
-
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const address = server.address() as AddressInfo;
-
-  return {
-    url: `http://127.0.0.1:${address.port}`,
-    size: () => sessionManager.size,
-    close: () => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
-  };
-}
-
 async function postJson(url: string, body: object, headers: HeadersInit = {}): Promise<Response> {
   return fetch(url, {
     method: "POST",
@@ -320,126 +283,12 @@ async function waitForOutputText(sseClient: SseClient, expected: string): Promis
   const deadline = Date.now() + 2_000;
   while (Date.now() < deadline) {
     const output = await sseClient.waitForFrame("output", Math.max(1, deadline - Date.now()));
-    received += decodeBase64(output.dataBase64);
+    const chunk = outputText(output);
+    expect(decodeBase64(output.dataBase64).length).toBeLessThanOrEqual(DATA_FRAME_MAX_DECODED_BYTES + 8);
+    received += chunk;
     if (received.includes(expected)) {
       return received;
     }
   }
   throw new Error(`Expected output ${expected}`);
-}
-
-function isTerminalFrame(value: unknown): value is TerminalFrame {
-  return typeof value === "object" && value !== null && "type" in value && typeof value.type === "string";
-}
-
-async function startMockSshServer(): Promise<MockSshServer> {
-  const hostKey = utils.generateKeyPairSync("ed25519").private;
-  const inputs: string[] = [];
-  const resizes: Array<{ cols: number; rows: number }> = [];
-  const clients: Connection[] = [];
-  const server = new Server({ hostKeys: [hostKey] });
-  let shellReadyCount = 0;
-
-  server.on("connection", (client) => {
-    clients.push(client);
-    client.on("authentication", (context: AuthContext) => {
-      if (context.method === "password" && context.username === "testuser" && context.password === "testpass") {
-        context.accept();
-        return;
-      }
-      context.reject(["password"]);
-    });
-    client.on("ready", () => {
-      client.on("session", (accept, reject) => {
-        const session = accept();
-        wireSession(session, inputs, resizes, () => {
-          shellReadyCount += 1;
-        }, reject);
-      });
-    });
-  });
-
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const address = server.address() as AddressInfo;
-
-  return {
-    port: address.port,
-    inputs,
-    resizes,
-    get shellReadyCount() {
-      return shellReadyCount;
-    },
-    close: () =>
-      new Promise((resolve, reject) => {
-        for (const client of clients) {
-          client.end();
-        }
-        server.close((error) => (error ? reject(error) : resolve()));
-      })
-  };
-}
-
-function wireSession(
-  session: Session,
-  inputs: string[],
-  resizes: Array<{ cols: number; rows: number }>,
-  onShellReady: () => void,
-  rejectSession: () => void
-): void {
-  session.on("pty", (accept, reject, info) => {
-    if (info.cols >= 20 && info.rows >= 5) {
-      accept();
-      return;
-    }
-    reject();
-  });
-  session.on("window-change", (_accept, _reject, info) => {
-    if (isWindowChangeInfo(info) && info.cols >= 20 && info.rows >= 5) {
-      resizes.push({ cols: info.cols, rows: info.rows });
-    }
-  });
-  session.on("shell", (accept) => {
-    const channel = accept();
-    onShellReady();
-    wireShell(channel, inputs);
-  });
-  session.on("exec", () => rejectSession());
-}
-
-function wireShell(channel: ServerChannel, inputs: string[]): void {
-  channel.write("mock-shell-ready\n");
-  channel.on("end", () => channel.close());
-  channel.on("data", (chunk: Buffer) => {
-    const input = chunk.toString("utf8");
-    inputs.push(input);
-    if (input.includes("printf http-ok")) {
-      channel.write("http-ok\n");
-    }
-    if (input.includes("printf reconnect-ok")) {
-      channel.write("reconnect-ok\n");
-    }
-  });
-}
-
-async function waitForResize(sshServer: MockSshServer, cols: number, rows: number): Promise<void> {
-  const deadline = Date.now() + 2_000;
-  while (Date.now() < deadline) {
-    if (sshServer.resizes.some((resize) => resize.cols === cols && resize.rows === rows)) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  }
-  throw new Error(`Expected resize ${cols}x${rows}`);
-}
-
-function isWindowChangeInfo(value: unknown): value is WindowChangeInfo {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "cols" in value &&
-    "rows" in value &&
-    typeof value.cols === "number" &&
-    typeof value.rows === "number"
-  );
 }
