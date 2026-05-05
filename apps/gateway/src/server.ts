@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { GatewayLogger } from "./logger.js";
 import { SessionManager, type SessionManagerOptions } from "./session-manager.js";
+import { TerminalHttpFallbackTransport, type TerminalHttpOptions } from "./terminal-http.js";
 import { attachTerminalWebSocketTransport, type TerminalWebSocketOptions } from "./terminal-ws.js";
 
 export interface GatewayServerOptions {
@@ -8,12 +9,14 @@ export interface GatewayServerOptions {
   port?: number;
   logger: GatewayLogger;
   sessionOptions?: SessionManagerOptions;
+  httpFallbackOptions?: TerminalHttpOptions;
   webSocketOptions?: TerminalWebSocketOptions;
 }
 
 export function createGatewayServer(options: GatewayServerOptions) {
   const sessionManager = new SessionManager(options.logger, options.sessionOptions);
-  const server = createServer((request, response) => handleRequest(request, response));
+  const httpFallbackTransport = new TerminalHttpFallbackTransport(sessionManager, options.logger, options.httpFallbackOptions);
+  const server = createServer((request, response) => void handleRequest(request, response, httpFallbackTransport));
   const webSocketTransport = attachTerminalWebSocketTransport(server, sessionManager, options.logger, options.webSocketOptions);
   server.once("close", () => {
     webSocketTransport.close();
@@ -22,9 +25,13 @@ export function createGatewayServer(options: GatewayServerOptions) {
   return { server, sessionManager };
 }
 
-function handleRequest(request: IncomingMessage, response: ServerResponse): void {
+async function handleRequest(request: IncomingMessage, response: ServerResponse, httpFallbackTransport: TerminalHttpFallbackTransport): Promise<void> {
   if (request.method === "GET" && request.url === "/healthz") {
     writeJson(response, 200, { ok: true });
+    return;
+  }
+
+  if (await httpFallbackTransport.handleRequest(request, response)) {
     return;
   }
 
