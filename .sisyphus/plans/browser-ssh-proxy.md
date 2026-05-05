@@ -567,7 +567,7 @@ Wave 5: Final verification wave F1-F4.
 
   **Commit**: YES | Message: `test(e2e): verify browser ssh terminal flows` | Files: `apps/web/**`, `playwright.config.*`, E2E test files
 
-- [ ] 11. Add Docker Production Files and Smoke Validation
+- [x] 11. Add Docker Production Files and Smoke Validation
 
   **What to do**: Add production Dockerfiles and `docker-compose.yml` for `web` and `gateway`. Bind host ports to `127.0.0.1` by default because app has no built-in auth. Add healthchecks for both services. Add `npm run docker:smoke` script that builds images, starts compose, waits for health, runs mocked SSH browser/integration smoke against the running containers, then tears down. README must explain that public exposure requires external HTTPS reverse proxy and protection.
   **Must NOT do**: Do not add Kubernetes, production database, automatic TLS certificate management, or app login/auth.
