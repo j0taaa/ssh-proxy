@@ -93,3 +93,19 @@
 - README expanded from 31 lines to a full runbook covering architecture, transport behavior, protocol limits, Docker production, reverse proxy guidance, environment variables, tech stack, and testing.
 - All six verification commands (install, typecheck, lint, test, test:e2e, docker:smoke) pass cleanly.
 - Required warning phrases (no built-in auth, localStorage, auto-accept, MITM, arbitrary targets, do not expose publicly) and required exclusions (SSH key auth, SFTP, port forwarding, terminal recording, RBAC, database persistence) all verified present by grep.
+
+## 2026-05-06T00:00:00Z - f4-scope-fidelity
+
+- F4 scope audit approved: forbidden-scope grep hits were limited to README/notepad exclusions, UI warnings, SSH password-auth code/tests, browser opt-in localStorage, and evidence/test file writes.
+- `rg` is unavailable in the environment, so F4 evidence used `grep` with `node_modules`, `.next`, and `dist` excluded and text-file includes where needed.
+- Docker compose remains localhost-bound by default, and README/UI/gateway startup warnings cover no app auth, localStorage password risk, public exposure, arbitrary targets, and auto-accepted host-key MITM risk.
+
+## 2026-05-06T06:12:00Z - f2-code-quality-review
+
+- F2 review approved after inspecting protocol validation, WSS/SSE/browser/xterm cleanup, SSH session timers, password redaction, sanitized transport errors, Docker smoke teardown behavior, and related tests.
+- Required verification passed: `npm run typecheck`, `npm run lint`, `npm test`, and repo TypeScript LSP diagnostics.
+
+## 2026-05-06T06:53:00Z - final-wave-output-frame-chunking
+
+- F1 final verification rejected WSS/SSE output framing because a single SSH output chunk could exceed the protocol's 4096 decoded-byte frame limit; both gateway transports now share `encodeOutputFrameChunks()` so output frames are split before emission.
+- The output chunker splits on JavaScript code point boundaries and measures UTF-8 bytes per frame, preserving Unicode terminal output while enforcing `DATA_FRAME_MAX_DECODED_BYTES` exactly.

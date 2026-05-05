@@ -53,3 +53,7 @@
 - `docker compose up -d` returns after the web container starts but before the web healthcheck is necessarily healthy; validation should poll `GET /healthz` or inspect health after startup instead of doing an immediate one-shot fetch.
 - `ssh2` is CommonJS in the root smoke script, so ESM smoke code must default-import it and destructure `Server`/`utils`.
 - `npm audit` still reports 2 moderate vulnerabilities during local/package-lock and Docker image installs; this was pre-existing and not changed in Docker scope.
+
+## 2026-05-06T06:12:00Z - f2-code-quality-review
+
+- Non-blocking robustness risk: gateway output frames are emitted per SSH chunk and are not explicitly split if a single SSH channel chunk exceeds the shared decoded frame size limit. Current tests pass and cover large output bursts, but future hardening could add explicit output chunking.
