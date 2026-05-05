@@ -47,3 +47,9 @@
 
 - `npm run lint` initially failed on unused `encodeBase64` imports left in WSS/HTTP tests after refactoring to shared frame helpers; removed the imports and reran lint successfully.
 - The first timeout test design used a blackhole TCP server and exceeded Vitest's 5s default; replaced it with bounded unreachable-host coverage plus sanitizer timeout coverage to keep tests deterministic.
+
+## 2026-05-05T21:55:00Z - task-11-docker-smoke
+
+- `docker compose up -d` returns after the web container starts but before the web healthcheck is necessarily healthy; validation should poll `GET /healthz` or inspect health after startup instead of doing an immediate one-shot fetch.
+- `ssh2` is CommonJS in the root smoke script, so ESM smoke code must default-import it and destructure `Server`/`utils`.
+- `npm audit` still reports 2 moderate vulnerabilities during local/package-lock and Docker image installs; this was pre-existing and not changed in Docker scope.

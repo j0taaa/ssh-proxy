@@ -30,3 +30,7 @@
 ## 2026-05-06T05:07:00Z - task-10-e2e-playwright
 
 - No unresolved Task 10 blockers remain. App auth, credential persistence, SSH key auth, SFTP, port forwarding, terminal recording, Docker production files, README updates, and CI/Docker smoke validation remain out of scope.
+
+## 2026-05-05T21:55:00Z - task-11-docker-smoke
+
+- No unresolved Task 11 blockers remain. External reverse proxy configuration, TLS certificate automation, app auth, SSH key auth, SFTP, port forwarding, terminal recording, and backend credential persistence remain out of scope.

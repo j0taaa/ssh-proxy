@@ -81,3 +81,9 @@
 - Playwright's `fullyParallel: false` is required because tests share the single mock SSH server instance started in global setup.
 - The WSS failure fallback test replaces `window.WebSocket` with a `FailingWebSocket` class in the browser context; the class immediately triggers `onerror`/`onclose` so the transport client falls back to HTTP.
 - Evidence screenshots show connected status with transport type labels ("via WSS" and "HTTP fallback"); xterm canvas rendering means terminal text may not be readable in PNG screenshots but connection state indicators are clearly visible.
+
+## 2026-05-05T21:55:00Z - task-11-docker-smoke
+
+- Production Docker now builds the shared protocol package to `packages/protocol/dist` before building either runtime image; gateway build uses the built protocol declarations so runtime imports resolve to JavaScript instead of TypeScript source.
+- Compose keeps default host exposure on `127.0.0.1` for both `web` and `gateway`, while containers listen on `0.0.0.0` internally so Docker port publishing and healthchecks work.
+- Docker smoke uses a host-local mock SSH server reached from the gateway container through `host.docker.internal` plus `extra_hosts: host-gateway`, then verifies both WSS and forced HTTP fallback through the production web container.
