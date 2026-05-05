@@ -87,3 +87,9 @@
 - Production Docker now builds the shared protocol package to `packages/protocol/dist` before building either runtime image; gateway build uses the built protocol declarations so runtime imports resolve to JavaScript instead of TypeScript source.
 - Compose keeps default host exposure on `127.0.0.1` for both `web` and `gateway`, while containers listen on `0.0.0.0` internally so Docker port publishing and healthchecks work.
 - Docker smoke uses a host-local mock SSH server reached from the gateway container through `host.docker.internal` plus `extra_hosts: host-gateway`, then verifies both WSS and forced HTTP fallback through the production web container.
+
+## 2026-05-06T06:01:00Z - task-12-readme-runbook
+
+- README expanded from 31 lines to a full runbook covering architecture, transport behavior, protocol limits, Docker production, reverse proxy guidance, environment variables, tech stack, and testing.
+- All six verification commands (install, typecheck, lint, test, test:e2e, docker:smoke) pass cleanly.
+- Required warning phrases (no built-in auth, localStorage, auto-accept, MITM, arbitrary targets, do not expose publicly) and required exclusions (SSH key auth, SFTP, port forwarding, terminal recording, RBAC, database persistence) all verified present by grep.
