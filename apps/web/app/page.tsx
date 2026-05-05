@@ -36,6 +36,13 @@ export default function Home() {
   );
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as unknown as Record<string, unknown>).__terminalReadBuffer = () =>
+        terminalRef.current?.readBuffer() ?? "";
+    }
+  });
+
+  useEffect(() => {
     transportRef.current = createTransportClient({
       onOutput: (data) => {
         if (terminalRef.current) {

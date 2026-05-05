@@ -19,6 +19,7 @@ import {
 
 export interface TerminalHandle {
   write: (data: string) => void;
+  readBuffer: () => string;
 }
 
 export interface TerminalProps {
@@ -169,6 +170,16 @@ const TerminalComponent = forwardRef<TerminalHandle, TerminalProps>(
       () => ({
         write: (data: string) => {
           terminalRef.current?.write(data);
+        },
+        readBuffer: () => {
+          const term = terminalRef.current;
+          if (!term) return "";
+          const buf = term.buffer.active;
+          const lines: string[] = [];
+          for (let i = 0; i < buf.length; i++) {
+            lines.push(buf.getLine(i)?.translateToString(true) ?? "");
+          }
+          return lines.join("\n");
         },
       }),
       [],
