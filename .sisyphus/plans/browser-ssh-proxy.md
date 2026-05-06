@@ -651,19 +651,19 @@ Wave 5: Final verification wave F1-F4.
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
 > **Do NOT auto-proceed after verification. Wait for user's explicit approval before marking work complete.**
 > **Never mark F1-F4 as checked before getting user's okay.** Rejection or user feedback -> fix -> re-run -> present again -> wait for okay.
-- [ ] F1. Plan Compliance Audit — oracle
+- [x] F1. Plan Compliance Audit — oracle
   - Verify every user decision and Metis guardrail is implemented exactly.
   - Verify no forbidden features were added.
   - Evidence: `.sisyphus/evidence/f1-plan-compliance.md`
-- [ ] F2. Code Quality Review — unspecified-high
+- [x] F2. Code Quality Review — unspecified-high
   - Run `npm run typecheck`, `npm run lint`, `npm test`.
   - Review stream cleanup, frame validation, and password redaction.
   - Evidence: `.sisyphus/evidence/f2-code-quality.md`
-- [ ] F3. Real Manual QA — unspecified-high (+ playwright if UI)
+- [x] F3. Real Manual QA — unspecified-high (+ playwright if UI)
   - Run `npm run test:e2e` and manually drive browser through WSS and forced HTTP fallback against mock SSH.
   - Capture screenshots for successful terminal output and bad credential error.
   - Evidence: `.sisyphus/evidence/f3-manual-qa.md`
-- [ ] F4. Scope Fidelity Check — deep
+- [x] F4. Scope Fidelity Check — deep
   - Verify no app auth, key auth, SFTP, port forwarding, RBAC, DB persistence, or terminal recording was introduced.
   - Verify README warns about unsafe decisions and public exposure.
   - Evidence: `.sisyphus/evidence/f4-scope-fidelity.md`
