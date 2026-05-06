@@ -186,7 +186,7 @@ describe("terminal HTTP SSE/POST fallback transport", () => {
 
     await expect(postJson(`${gateway.url}/sse/terminal/${sessionId}/input`, inputFrame(sessionId, "single-large-output\n"))).resolves.toMatchObject({ status: 202 });
 
-    const outputs = await waitForOutputFrames(sseClient, "mock$ ");
+    const outputs = await waitForOutputFrames(sseClient, `${"z".repeat(4097)}café-雪`);
     expect(outputs.length).toBeGreaterThanOrEqual(2);
     expect(outputs.map(decodedOutputByteLength).every((byteLength) => byteLength <= DATA_FRAME_MAX_DECODED_BYTES)).toBe(true);
     expect(outputs.map(outputText).join("")).toContain(`${"z".repeat(4097)}café-雪`);
