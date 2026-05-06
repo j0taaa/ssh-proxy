@@ -282,7 +282,7 @@ function parseHttpFallbackRoute(request: IncomingMessage):
 
 function corsHeadersFor(request: IncomingMessage): CorsHeaders {
   const origin = request.headers.origin;
-  if (typeof origin !== "string" || (!ALLOWED_DEV_ORIGINS.has(origin) && !CONFIGURED_ALLOWED_ORIGINS.has(origin))) {
+  if (typeof origin !== "string" || !isAllowedOrigin(origin)) {
     return {};
   }
 
@@ -290,6 +290,23 @@ function corsHeadersFor(request: IncomingMessage): CorsHeaders {
     "access-control-allow-origin": origin,
     vary: "Origin"
   };
+}
+
+function isAllowedOrigin(origin: string): boolean {
+  return ALLOWED_DEV_ORIGINS.has(origin) || CONFIGURED_ALLOWED_ORIGINS.has(origin) || isDevWebOrigin(origin);
+}
+
+function isDevWebOrigin(origin: string): boolean {
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
+
+  try {
+    const url = new URL(origin);
+    return (url.protocol === "http:" || url.protocol === "https:") && url.port === "3000";
+  } catch {
+    return false;
+  }
 }
 
 function writePreflight(response: ServerResponse, corsHeaders: CorsHeaders): void {
