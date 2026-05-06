@@ -25,6 +25,12 @@ const ALLOWED_DEV_ORIGINS = new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000"
 ]);
+const CONFIGURED_ALLOWED_ORIGINS = new Set(
+  (process.env.GATEWAY_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0)
+);
 
 export interface TerminalHttpOptions {
   heartbeatIntervalMs?: number;
@@ -276,7 +282,7 @@ function parseHttpFallbackRoute(request: IncomingMessage):
 
 function corsHeadersFor(request: IncomingMessage): CorsHeaders {
   const origin = request.headers.origin;
-  if (typeof origin !== "string" || !ALLOWED_DEV_ORIGINS.has(origin)) {
+  if (typeof origin !== "string" || (!ALLOWED_DEV_ORIGINS.has(origin) && !CONFIGURED_ALLOWED_ORIGINS.has(origin))) {
     return {};
   }
 

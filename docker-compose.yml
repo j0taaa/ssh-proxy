@@ -9,6 +9,7 @@ services:
       HOST: 0.0.0.0
       PORT: 3001
       NODE_ENV: production
+      GATEWAY_ALLOWED_ORIGINS: ${GATEWAY_ALLOWED_ORIGINS:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

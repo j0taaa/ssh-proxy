@@ -2,14 +2,13 @@ import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { once } from "node:events";
 import { spawn } from "node:child_process";
+import { createServer } from "node:net";
 import ssh2 from "ssh2";
 
 const { Server, utils } = ssh2;
 
 const evidencePath = ".sisyphus/evidence/task-11-docker-smoke.txt";
 const projectName = process.env.COMPOSE_PROJECT_NAME || "ssh-proxy-smoke";
-const webUrl = "http://127.0.0.1:3000";
-const gatewayUrl = "http://127.0.0.1:3001";
 const evidence = [];
 
 let mockSshServer = null;
@@ -111,6 +110,16 @@ async function startMockSshServer() {
   };
 }
 
+async function getAvailablePort() {
+  const server = createServer();
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  const port = address.port;
+  await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  return port;
+}
+
 async function waitForUrl(url, expectedDescription, timeoutMs = 120_000) {
   const deadline = Date.now() + timeoutMs;
   let lastError = "not requested";
@@ -144,7 +153,7 @@ async function waitForTerminalText(page, expected, timeoutMs = 15_000) {
   throw new Error(`Terminal did not contain ${expected}. Last text: ${String(lastText).slice(0, 300)}`);
 }
 
-async function runBrowserSmoke(mockPort, forceHttp) {
+async function runBrowserSmoke(webUrl, mockPort, forceHttp) {
   const marker = forceHttp ? "docker-http-smoke" : "docker-wss-smoke";
   const browser = await chromium.launch();
   const page = await browser.newPage();
@@ -180,18 +189,29 @@ async function main() {
 
   try {
     mockSshServer = await startMockSshServer();
+    const webPort = await getAvailablePort();
+    const gatewayPort = await getAvailablePort();
+    const webUrl = `http://127.0.0.1:${webPort}`;
+    const gatewayUrl = `http://127.0.0.1:${gatewayPort}`;
+    const composeEnv = {
+      WEB_PORT: String(webPort),
+      GATEWAY_PORT: String(gatewayPort),
+      NEXT_PUBLIC_GATEWAY_URL: gatewayUrl,
+      GATEWAY_ALLOWED_ORIGINS: webUrl,
+    };
+    record(`compose host ports web=${webPort}, gateway=${gatewayPort}`);
     await run("npx", ["playwright", "install", "chromium"]);
     await run("docker", ["compose", "-p", projectName, "build"], {
-      env: { NEXT_PUBLIC_GATEWAY_URL: gatewayUrl },
+      env: composeEnv,
     });
     await run("docker", ["compose", "-p", projectName, "up", "-d"], {
-      env: { NEXT_PUBLIC_GATEWAY_URL: gatewayUrl },
+      env: composeEnv,
     });
     await waitForUrl(`${gatewayUrl}/healthz`, "gateway");
     await waitForUrl(`${webUrl}/healthz`, "web");
     await run("docker", ["compose", "-p", projectName, "ps"]);
-    await runBrowserSmoke(mockSshServer.port, false);
-    await runBrowserSmoke(mockSshServer.port, true);
+    await runBrowserSmoke(webUrl, mockSshServer.port, false);
+    await runBrowserSmoke(webUrl, mockSshServer.port, true);
     record(`mock SSH observed input markers: ${mockSshServer.inputs.join("").includes("docker-wss-smoke") && mockSshServer.inputs.join("").includes("docker-http-smoke")}`);
   } catch (error) {
     exitCode = 1;
