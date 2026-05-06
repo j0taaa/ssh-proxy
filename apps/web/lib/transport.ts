@@ -21,14 +21,30 @@ export interface TransportCallbacks {
 }
 
 const WSS_TIMEOUT_MS = 3000;
-const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:3001";
+const CONFIGURED_GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL?.trim();
+
+function getGatewayUrl(): string {
+  if (CONFIGURED_GATEWAY_URL) {
+    return CONFIGURED_GATEWAY_URL.replace(/\/$/, "");
+  }
+
+  if (typeof window === "undefined") {
+    return "http://localhost:3001";
+  }
+
+  const url = new URL(window.location.href);
+  if (url.port === "3000") {
+    url.port = "3001";
+  }
+  return url.origin;
+}
 
 function generateSessionId(): string {
   return `cl-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function getWsUrl(): string {
-  const url = new URL(GATEWAY_URL);
+  const url = new URL(getGatewayUrl());
   const protocol = url.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${url.host}/ws/terminal`;
 }
@@ -171,13 +187,14 @@ export function createTransportClient(callbacks: TransportCallbacks) {
 
   async function connectHttp(params: ConnectParams): Promise<void> {
     if (destroyed) return;
+    const gatewayUrl = getGatewayUrl();
 
     if (currentStatus !== "connecting") {
       setStatus("connecting", null);
     }
 
     try {
-      const createResponse = await fetch(`${GATEWAY_URL}/sessions`, {
+      const createResponse = await fetch(`${gatewayUrl}/sessions`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -218,7 +235,7 @@ export function createTransportClient(callbacks: TransportCallbacks) {
 
       setStatus("connected", "http-fallback");
 
-      eventSource = new EventSource(`${GATEWAY_URL}/sse/terminal/${sessionId}/events`);
+      eventSource = new EventSource(`${gatewayUrl}/sse/terminal/${sessionId}/events`);
 
       eventSource.addEventListener("output", ((event: MessageEvent) => {
         try {
@@ -271,7 +288,7 @@ export function createTransportClient(callbacks: TransportCallbacks) {
     if (activeTransport === "wss" && ws?.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "input", sessionId, seq: nextSeq(), dataBase64 }));
     } else if (activeTransport === "http-fallback") {
-      fetch(`${GATEWAY_URL}/sse/terminal/${sessionId}/input`, {
+      fetch(`${getGatewayUrl()}/sse/terminal/${sessionId}/input`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ type: "input", sessionId, seq: nextSeq(), dataBase64 }),
@@ -285,7 +302,7 @@ export function createTransportClient(callbacks: TransportCallbacks) {
     if (activeTransport === "wss" && ws?.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "resize", sessionId, seq: nextSeq(), cols, rows }));
     } else if (activeTransport === "http-fallback") {
-      fetch(`${GATEWAY_URL}/sse/terminal/${sessionId}/input`, {
+      fetch(`${getGatewayUrl()}/sse/terminal/${sessionId}/input`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ type: "resize", sessionId, seq: nextSeq(), cols, rows }),
@@ -302,7 +319,7 @@ export function createTransportClient(callbacks: TransportCallbacks) {
       } catch { /* ignore */ }
       cleanupWss();
     } else if (activeTransport === "http-fallback" && sessionId) {
-      fetch(`${GATEWAY_URL}/sse/terminal/${sessionId}/input`, {
+      fetch(`${getGatewayUrl()}/sse/terminal/${sessionId}/input`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ type: "close", sessionId, seq: nextSeq(), reason: "client_disconnect" }),
