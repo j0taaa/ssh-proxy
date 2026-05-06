@@ -55,7 +55,7 @@ npm install
 npm run dev
 ```
 
-This runs the Next.js dev server on `http://localhost:3000` and the gateway on `http://localhost:3001`. The browser reads the gateway URL from the `NEXT_PUBLIC_GATEWAY_URL` environment variable, which defaults to `http://localhost:3001`.
+This runs the Next.js dev server on port `3000` and the gateway on port `3001`, bound to all interfaces so you can open the app from another machine at `http://<server-hostname>:3000`. The default dev origin allowlist includes `hwctools.site`; set `NEXT_ALLOWED_DEV_ORIGINS` to a comma-separated list if you use another hostname. When `NEXT_PUBLIC_GATEWAY_URL` is not set, the browser derives the gateway URL from the page URL, so `http://hwctools.site:3000` uses `http://hwctools.site:3001` automatically.
 
 You can also run each service individually:
 
@@ -182,8 +182,8 @@ These features are intentionally out of scope. They have not been implemented an
 | Variable | Default | Used by | Purpose |
 |---|---|---|---|
 | `PORT` | `3001` | Gateway | HTTP listen port |
-| `HOST` | `127.0.0.1` | Gateway | HTTP listen host |
-| `NEXT_PUBLIC_GATEWAY_URL` | `http://localhost:3001` | Web (browser) | Gateway base URL for the transport client |
+| `HOST` | `0.0.0.0` | Gateway | HTTP listen host |
+| `NEXT_PUBLIC_GATEWAY_URL` | derived from page URL | Web (browser) | Optional gateway base URL override for the transport client |
 | `WEB_PORT` | `3000` | Docker Compose | Host port for the web service |
 | `GATEWAY_PORT` | `3001` | Docker Compose | Host port for the gateway service |
 | `NODE_ENV` | `development` | Both | `production` in Docker, `development` otherwise |
