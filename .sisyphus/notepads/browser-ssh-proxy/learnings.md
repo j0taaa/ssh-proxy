@@ -100,6 +100,12 @@
 - `rg` is unavailable in the environment, so F4 evidence used `grep` with `node_modules`, `.next`, and `dist` excluded and text-file includes where needed.
 - Docker compose remains localhost-bound by default, and README/UI/gateway startup warnings cover no app auth, localStorage password risk, public exposure, arbitrary targets, and auto-accepted host-key MITM risk.
 
+## 2026-05-06T00:00:00Z - f4-scope-fidelity-output-chunking-rerun
+
+- Reran F4 after the output chunking fix; `output-frame-chunks.ts` only splits outbound SSH output buffers into protocol-sized base64 strings and is used by WSS/SSE output paths.
+- New chunking tests assert decoded output frame byte limits and reconstructed output content; they do not add auth, key auth, SFTP/file transfer, forwarding, recording, database persistence, Kubernetes, or TLS automation.
+- README/UI/gateway warnings and Docker localhost bindings remain present; browser localStorage remains the only credential persistence path and backend sessions remain in memory.
+
 ## 2026-05-06T06:12:00Z - f2-code-quality-review
 
 - F2 review approved after inspecting protocol validation, WSS/SSE/browser/xterm cleanup, SSH session timers, password redaction, sanitized transport errors, Docker smoke teardown behavior, and related tests.
@@ -109,3 +115,8 @@
 
 - F1 final verification rejected WSS/SSE output framing because a single SSH output chunk could exceed the protocol's 4096 decoded-byte frame limit; both gateway transports now share `encodeOutputFrameChunks()` so output frames are split before emission.
 - The output chunker splits on JavaScript code point boundaries and measures UTF-8 bytes per frame, preserving Unicode terminal output while enforcing `DATA_FRAME_MAX_DECODED_BYTES` exactly.
+
+## 2026-05-06T06:59:00Z - f2-code-quality-rerun
+
+- F2 rerun approved after the output chunking fix: WSS and SSE both use `encodeOutputFrameChunks()`, and transport tests verify single large SSH output is split into protocol-sized frames without losing Unicode content.
+- Required verification passed on latest code: `npm run typecheck`, `npm run lint`, `npm test` with 34 tests, and LSP diagnostics for the chunking/touched gateway files.

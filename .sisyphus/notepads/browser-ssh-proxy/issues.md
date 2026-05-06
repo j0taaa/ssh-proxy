@@ -57,3 +57,7 @@
 ## 2026-05-06T06:12:00Z - f2-code-quality-review
 
 - Non-blocking robustness risk: gateway output frames are emitted per SSH chunk and are not explicitly split if a single SSH channel chunk exceeds the shared decoded frame size limit. Current tests pass and cover large output bursts, but future hardening could add explicit output chunking.
+
+## 2026-05-06T06:59:00Z - f2-code-quality-rerun
+
+- Prior F2 oversized single-output-chunk risk is resolved by shared WSS/SSE output chunking and transport tests that assert each decoded output frame stays within `DATA_FRAME_MAX_DECODED_BYTES`.
